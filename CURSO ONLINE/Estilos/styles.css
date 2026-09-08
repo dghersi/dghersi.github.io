@@ -86,13 +86,6 @@ legend { padding:0 .5rem; color:var(--muted); font-size:.85rem; }
 }
 .side-nav-item:hover { background: var(--panel); color: var(--text); }
 .side-nav-item.active { background: var(--panel); color: var(--accent); font-weight: 600; }
-.side-sublist { list-style: none; margin: 0 0 .75rem; padding: 0 0 0 .75rem; }
-.side-sublist li { margin: 0; }
-.side-sublist a {
-  display: block; font-size: .8rem; color: var(--muted); text-decoration: none;
-  padding: .35rem .5rem; border-radius: 5px;
-}
-.side-sublist a:hover { background: var(--panel); color: var(--text); }
 
 .app-main {
   grid-area: main;
@@ -142,6 +135,5 @@ legend { padding:0 .5rem; color:var(--muted); font-size:.85rem; }
       "footer";
   }
   .app-sidebar-left { border-right: none; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: .25rem; }
-  .side-sublist { display: none; }
   .app-sidebar-right { border-left: none; border-top: 1px solid var(--border); }
 }

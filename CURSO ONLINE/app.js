@@ -17,16 +17,6 @@ document.querySelectorAll(".side-nav-item").forEach(btn => {
   btn.addEventListener("click", () => activarPestana(btn.dataset.tab));
 });
 
-// Los enlaces del sub-menú activan la pestaña "Crear Curso" y bajan a la sección.
-document.querySelectorAll(".side-sublist a").forEach(link => {
-  link.addEventListener("click", (e) => {
-    e.preventDefault();
-    activarPestana("crear");
-    document.getElementById(link.getAttribute("href").slice(1))
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-});
-
 initCrearCurso();
 initReproductor();
 initChatIA();

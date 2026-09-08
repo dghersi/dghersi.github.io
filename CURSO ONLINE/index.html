@@ -27,24 +27,20 @@
 
   <!-- ============ SIDEBAR IZQUIERDO (menú) ============ -->
   <nav class="app-sidebar-left">
-    <button class="side-nav-item active" data-tab="crear">Crear Curso</button>
-    <ul class="side-sublist">
-      <li><a href="#seccion-drive">Conexión Drive</a></li>
-      <li><a href="#seccion-ia">Conexión IA</a></li>
-      <li><a href="#seccion-datos">Datos del curso</a></li>
-      <li><a href="#seccion-generar">Generar sesión</a></li>
-      <li><a href="#seccion-generar-todas">Generar todas</a></li>
-    </ul>
+    <button class="side-nav-item active" data-tab="drive">Conexión Drive</button>
+    <button class="side-nav-item" data-tab="ia">Conexión IA</button>
+    <button class="side-nav-item" data-tab="datos">Datos del curso</button>
+    <button class="side-nav-item" data-tab="generar">Generar sesión</button>
+    <button class="side-nav-item" data-tab="generar-todas">Generar todas</button>
     <button class="side-nav-item" data-tab="reproductor">Reproductor</button>
   </nav>
 
   <!-- ============ MAIN ============ -->
   <main class="app-main">
 
-    <!-- TAB: CREAR CURSO -->
-    <section class="panel active" id="panel-crear">
-
-      <fieldset id="seccion-drive">
+    <!-- SECCIÓN: CONEXIÓN DRIVE -->
+    <section class="panel active" id="panel-drive">
+      <fieldset>
         <legend>Conexión con Google Drive</legend>
         <label>Client ID de OAuth</label>
         <input id="driveClientId" placeholder="123456789-abc.apps.googleusercontent.com" />
@@ -52,8 +48,11 @@
         <button class="secondary" id="btnConectarDrive">Conectar con Google Drive</button>
         <p class="msg" id="estadoDrive">No conectado.</p>
       </fieldset>
+    </section>
 
-      <fieldset id="seccion-ia">
+    <!-- SECCIÓN: CONEXIÓN IA -->
+    <section class="panel" id="panel-ia">
+      <fieldset>
         <legend>Conexión con IA (con respaldo automático)</legend>
         <p class="hint">Se intenta en este orden: Gemini → Groq → Mistral. Deja vacía la API key de un proveedor para saltarlo por completo.</p>
 
@@ -78,8 +77,11 @@
         <button class="secondary" id="btnGuardarKey">Guardar todas las claves</button>
         <p class="msg" id="msgKey"></p>
       </fieldset>
+    </section>
 
-      <fieldset id="seccion-datos">
+    <!-- SECCIÓN: DATOS DEL CURSO -->
+    <section class="panel" id="panel-datos">
+      <fieldset>
         <legend>1. Datos del curso</legend>
         <label>Editar curso existente</label>
         <select id="selectEditar"><option value="">— Crear curso nuevo —</option></select>
@@ -102,12 +104,15 @@
         <input id="notacion_especial" placeholder="estándar del campo" />
         <label>Lista completa de sesiones (una por línea, formato: N | Tema)</label>
         <textarea id="lista_sesiones" class="mono" rows="10" placeholder="1 | LOS FLUIDOS. Definición de Mecánica de Fluidos...&#10;2 | PRESIÓN. Propiedades de la presión...&#10;3 | ECUACIÓN GENERAL DE LA HIDROSTÁTICA..."></textarea>
-        <p class="hint">Esta lista es solo para poder generar todas las sesiones de un clic (sección 3). Si prefieres generar una por una, puedes dejarla vacía y usar la sección 2.</p>
+        <p class="hint">Esta lista es solo para poder generar todas las sesiones de un clic (sección "Generar todas"). Si prefieres generar una por una, puedes dejarla vacía.</p>
         <button class="primary" id="btnGuardarCurso">Guardar datos del curso</button>
         <p class="msg" id="msgCurso"></p>
       </fieldset>
+    </section>
 
-      <fieldset id="seccion-generar">
+    <!-- SECCIÓN: GENERAR UNA SESIÓN -->
+    <section class="panel" id="panel-generar">
+      <fieldset>
         <legend>2. Generar una sesión</legend>
         <label>Curso</label>
         <select id="selectCursoGenerar"><option value="">— Selecciona un curso —</option></select>
@@ -119,8 +124,11 @@
         <button class="primary" id="btnGenerar">Generar con IA</button>
         <p class="msg" id="msgGenerar"></p>
       </fieldset>
+    </section>
 
-      <fieldset id="seccion-generar-todas">
+    <!-- SECCIÓN: GENERAR TODAS -->
+    <section class="panel" id="panel-generar-todas">
+      <fieldset>
         <legend>3. Generar todas las sesiones pendientes</legend>
         <label>Curso</label>
         <select id="selectCursoGenerarTodas"><option value="">— Selecciona un curso —</option></select>
@@ -128,13 +136,13 @@
           <input type="checkbox" id="regenerarExistentes" style="width:auto" />
           Regenerar sesiones que ya existen (por defecto se saltan)
         </label>
-        <p class="hint">Usa la "Lista completa de sesiones" guardada en el curso (sección 1). El log de avance aparece en el panel derecho.</p>
+        <p class="hint">Usa la "Lista completa de sesiones" guardada en el curso. El log de avance aparece en el panel derecho.</p>
         <button class="primary" id="btnGenerarTodas">Generar todas</button>
         <button class="secondary" id="btnDetenerTodas" style="display:none">Detener</button>
       </fieldset>
     </section>
 
-    <!-- TAB: REPRODUCTOR -->
+    <!-- SECCIÓN: REPRODUCTOR -->
     <section class="panel" id="panel-reproductor">
       <label>Curso</label>
       <select id="selectCursoJugar"><option value="">— Selecciona un curso —</option></select>
