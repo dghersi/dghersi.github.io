@@ -2,7 +2,13 @@
 // PLANTILLAS DE TEXTO PARA LA IA
 // ==========================================
 
-export function construirPrompt(curso, numSesion, tema) {
+export function construirPrompt(curso, numSesion, tema, modo = "largo") {
+  const config = {
+    corto: { rango: "entre 1 y 2", extra: "" },
+    largo: { rango: "entre 3 y 5", extra: "" },
+    extenso: { rango: "entre 6 y 8", extra: " Incluye al menos un ejemplo concreto dentro del contenido de cada diapositiva de teoría." }
+  }[modo] || { rango: "entre 3 y 5", extra: "" };
+
   return `Eres ${curso.rol_experto}. Vas a generar el material de estudio de UNA sesión de un curso, en formato Markdown limpio y legible (alguien lo podrá abrir directo en Google Drive o cualquier editor de texto).
 
 Fuente principal de contenido: ${curso.fuente_principal}
@@ -31,7 +37,7 @@ van con $...$ y backslash normal, sin escapar nada, ya que esto NO es JSON):
 \`\`\`
 
 ## Diapositiva 2: (título)
-(repite "## Diapositiva N: título" — mínimo 4 diapositivas)
+(repite "## Diapositiva N: título" hasta cubrir ${config.rango} diapositivas en total.${config.extra})
 
 ## Problema 1
 
@@ -70,6 +76,33 @@ sección si el software es NINGUNO)
 1. (respuesta 1)
 2. (respuesta 2)
 (mismo número y orden que las preguntas del examen)`;
+}
+
+// Regenera SOLO el bloque de diapositivas de teoría de una sesión ya generada
+// (problemas, código y examen no se tocan). Usado por el badge "Modelo/Modo" del reproductor.
+export function construirPromptDiapositivas(curso, tema, modo = "largo") {
+  const config = {
+    corto: { rango: "entre 1 y 2", extra: "" },
+    largo: { rango: "entre 3 y 5", extra: "" },
+    extenso: { rango: "entre 6 y 8", extra: " Incluye al menos un ejemplo concreto dentro del contenido de cada diapositiva." }
+  }[modo] || { rango: "entre 3 y 5", extra: "" };
+
+  return `Eres ${curso.rol_experto}. Vas a regenerar SOLO el bloque de diapositivas de teoría de una sesión ya generada (los problemas, el código y el examen de esa sesión NO cambian — no los menciones ni los repitas).
+
+Tema de la sesión: """${tema}"""
+Idioma: ${curso.idioma}. Notación especial: ${curso.notacion_especial}.
+Cantidad de diapositivas pedida: ${config.rango}.${config.extra}
+
+Devuelve EXCLUSIVAMENTE Markdown con esta estructura, repetida tantas veces como diapositivas (fórmulas LaTeX con $...$ y backslash normal, sin escapar nada):
+
+## Diapositiva 1: (título)
+(explicación clara del concepto)
+
+\`\`\`svg
+(código <svg>...</svg> simple si ayuda a entender; omite este bloque si no hace falta)
+\`\`\`
+
+(repite "## Diapositiva N: título" hasta completar ${config.rango} diapositivas en total)`;
 }
 
 export function construirPromptCorreccion(preguntas, respuestasAlumno) {

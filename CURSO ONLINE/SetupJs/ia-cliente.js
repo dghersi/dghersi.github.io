@@ -66,17 +66,30 @@ export function proveedoresConfigurados() {
   return PROVEEDORES_IA.filter(p => !!p.apiKey()).map(p => p.nombre);
 }
 
+let ultimoProveedorExitoso = null;
+
+// Devuelve el nombre del proveedor que respondió exitosamente en la última
+// llamada a llamarIA() (útil para guardar/mostrar "con qué IA se generó esto").
+export function obtenerUltimoProveedor() {
+  return ultimoProveedorExitoso;
+}
+
 // ==========================================
 // ORQUESTADOR — intenta cada proveedor en orden, con reintentos
 // ==========================================
 
-// Intenta cada proveedor configurado en orden (Gemini → Groq → Mistral).
+// Intenta cada proveedor configurado en orden (Gemini → Groq → Mistral), salvo
+// que se pase "proveedorForzado" — en ese caso usa SOLO ese proveedor (con sus
+// mismos reintentos), útil para regenerar contenido puntual con un modelo elegido.
 // Dentro de cada uno reintenta unas veces si está saturado (503/429)
 // antes de pasar al siguiente proveedor.
-export async function llamarIA(promptText, onProgreso) {
+export async function llamarIA(promptText, onProgreso, proveedorForzado) {
   const errores = [];
   let algunoConfigurado = false;
-  for (const prov of PROVEEDORES_IA) {
+  const lista = proveedorForzado
+    ? PROVEEDORES_IA.filter(p => p.nombre.toLowerCase() === proveedorForzado.toLowerCase())
+    : PROVEEDORES_IA;
+  for (const prov of lista) {
     const apiKey = prov.apiKey();
     if (!apiKey) continue;
     algunoConfigurado = true;
@@ -86,6 +99,7 @@ export async function llamarIA(promptText, onProgreso) {
         let text = await prov.llamar(apiKey, prov.modelo(), promptText);
         text = text.trim();
         if (text.startsWith("```")) text = text.replace(/^```(markdown|md)?/i, "").replace(/```$/, "").trim();
+        ultimoProveedorExitoso = prov.nombre;
         return text;
       } catch (err) {
         const saturado = err.status === 503 || err.status === 429;
@@ -98,6 +112,10 @@ export async function llamarIA(promptText, onProgreso) {
       }
     }
   }
-  if (!algunoConfigurado) throw new Error("No configuraste ninguna API key (Gemini, Groq o Mistral).");
+  if (!algunoConfigurado) {
+    throw new Error(proveedorForzado
+      ? `No configuraste la API key de ${proveedorForzado}.`
+      : "No configuraste ninguna API key (Gemini, Groq o Mistral).");
+  }
   throw new Error("Todos los proveedores fallaron — " + errores.join(" | "));
 }

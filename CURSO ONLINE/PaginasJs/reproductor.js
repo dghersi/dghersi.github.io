@@ -1,8 +1,8 @@
 import { db, doc, setDoc, getDoc, getDocs, deleteDoc, collection, poblarSelectCursos } from "../SetupJs/firebase-cliente.js";
-import { leerArchivoDrive } from "../SetupJs/drive.js";
-import { llamarIA } from "../SetupJs/ia-cliente.js";
-import { parsearMarkdown, parsearCorrecciones, parsearExamenSolo } from "../FuncionesJs/parsers.js";
-import { construirPromptCorreccion, construirPromptExamenNuevo } from "../FuncionesJs/prompts.js";
+import { leerArchivoDrive, guardarSesionEnDrive } from "../SetupJs/drive.js";
+import { llamarIA, obtenerUltimoProveedor } from "../SetupJs/ia-cliente.js";
+import { parsearMarkdown, parsearCorrecciones, parsearExamenSolo, parsearDiapositivasSolo, reconstruirMarkdown } from "../FuncionesJs/parsers.js";
+import { construirPromptCorreccion, construirPromptExamenNuevo, construirPromptDiapositivas } from "../FuncionesJs/prompts.js";
 import { formatearTexto } from "../FuncionesJs/formato.js";
 import { mostrarEstadoFooter } from "./estado.js";
 
@@ -16,7 +16,10 @@ let cursoActivoSlug = "";
 let sesionActivaNum = "";
 let cursoActivo = null;
 let temaActivo = "";
-let examenGuardado = null; // { respuestas: [], correccion: [] } | null
+let driveFileIdActivo = null;
+let modeloUsadoActivo = null;   // "Gemini" | "Groq" | "Mistral" | "Auto" | null (sesiones viejas)
+let modoGeneradoActivo = null;  // "corto" | "largo" | "extenso" | null (sesiones viejas)
+let examenGuardado = null;      // { respuestas: [], correccion: [] } | null
 
 // ==========================================
 // ORQUESTADOR — pestaña "Reproductor"
@@ -75,8 +78,12 @@ async function onCargarSesion() {
 
     const snap = await getDoc(doc(db, "cursos", slug, "sesiones", "sesion_" + num));
     if (!snap.exists()) throw new Error("Sesión no encontrada.");
-    const fileId = snap.data().drive_file_id;
-    temaActivo = snap.data().tema || "";
+    const sesionData = snap.data();
+    const fileId = sesionData.drive_file_id;
+    temaActivo = sesionData.tema || "";
+    modeloUsadoActivo = sesionData.modelo_usado || null;
+    modoGeneradoActivo = sesionData.modo_generado || null;
+    driveFileIdActivo = fileId;
     if (!fileId) throw new Error("Esta sesión no tiene un archivo de Drive asociado (fue generada con una versión anterior de la app).");
     const markdown = await leerArchivoDrive(fileId);
     const contenido = parsearMarkdown(markdown);
@@ -100,7 +107,7 @@ async function onCargarSesion() {
   }
 }
 
-// ---------- Funciones de lógica: armar las diapositivas ----------
+// ---------- Funciones de lógica: armar / desarmar las diapositivas ----------
 function construirSlides(contenido) {
   const slides = [];
   (contenido.diapositivas || []).forEach(d => slides.push({ tipo: "teoria", ...d }));
@@ -113,6 +120,16 @@ function construirSlides(contenido) {
   return slides;
 }
 
+// Reconstruye {problemas, codigo, examen} a partir del estado actual en memoria
+// (para reconstruir el Markdown completo al regenerar solo la teoría).
+function extraerRestoDelContenido() {
+  const problemas = slidesActuales.filter(s => s.tipo === "problema").map(s => ({ enunciado: s.enunciado, solucion: s.solucion, svg: s.svg }));
+  const codigo = slidesActuales.filter(s => s.tipo === "codigo").map(s => ({ problema_ref: s.problema_ref, codigo: s.codigo }));
+  const examenSlide = slidesActuales.find(s => s.tipo === "examen");
+  const examen = examenSlide ? { preguntas: examenSlide.preguntas, tiempo_estimado_min: examenSlide.tiempo } : null;
+  return { problemas, codigo, examen };
+}
+
 // ---------- Orquestador de render: decide qué función de tipo llamar ----------
 function renderSlide() {
   const s = slidesActuales[slideIdx];
@@ -121,6 +138,8 @@ function renderSlide() {
   const body = document.getElementById("slideBody");
   const svgBox = document.getElementById("slideSvg");
   svgBox.innerHTML = "";
+  const indicadoresPrevios = document.getElementById("slideIndicadores");
+  if (indicadoresPrevios) indicadoresPrevios.remove();
 
   if (s.tipo === "teoria") renderTeoria(s, kicker, title, body, svgBox);
   else if (s.tipo === "problema") renderProblema(s, kicker, title, body, svgBox);
@@ -141,6 +160,79 @@ function renderTeoria(s, kicker, title, body, svgBox) {
   title.textContent = s.titulo;
   body.innerHTML = formatearTexto(s.contenido);
   if (s.svg) svgBox.innerHTML = s.svg;
+  renderIndicadoresDiapositiva();
+}
+
+// ---------- Indicadores de generación (Modelo/Modo) — solo en diapositivas de teoría ----------
+function renderIndicadoresDiapositiva() {
+  const viewer = document.getElementById("viewer");
+  const cont = document.createElement("div");
+  cont.className = "slide-indicadores";
+  cont.id = "slideIndicadores";
+  cont.innerHTML = `
+    <label>Modelo
+      <select id="selectModeloSlide">
+        <option value="Auto">Auto</option>
+        <option value="Gemini">Gemini</option>
+        <option value="Groq">Groq</option>
+        <option value="Mistral">Mistral</option>
+      </select>
+    </label>
+    <label>Modo
+      <select id="selectModoSlide">
+        <option value="corto">Corto (1-2)</option>
+        <option value="largo">Largo (3-5)</option>
+        <option value="extenso">Extenso (6-8)</option>
+      </select>
+    </label>
+    <button class="secondary" id="btnRegenerarTeoria" style="margin-top:0; padding:.15rem .5rem; font-size:.68rem;">Regenerar</button>
+  `;
+  viewer.appendChild(cont);
+  document.getElementById("selectModeloSlide").value = modeloUsadoActivo || "Auto";
+  document.getElementById("selectModoSlide").value = modoGeneradoActivo || "largo";
+  document.getElementById("btnRegenerarTeoria").addEventListener("click", () => {
+    const modelo = document.getElementById("selectModeloSlide").value;
+    const modo = document.getElementById("selectModoSlide").value;
+    regenerarTeoriaSesion(modelo, modo);
+  });
+}
+
+// Regenera TODO el bloque de diapositivas de teoría de la sesión (no solo la
+// actual), reconstruye el Markdown completo y lo sube a Drive.
+async function regenerarTeoriaSesion(modeloElegido, modoElegido) {
+  const cont = document.getElementById("slideIndicadores");
+  if (cont) cont.style.opacity = ".5";
+  mostrarEstadoFooter(`Regenerando teoría (${modoElegido})…`);
+  try {
+    const prompt = construirPromptDiapositivas(cursoActivo, temaActivo, modoElegido);
+    const proveedorForzado = modeloElegido && modeloElegido !== "Auto" ? modeloElegido : undefined;
+    const texto = await llamarIA(prompt, null, proveedorForzado);
+    const nuevasDiapositivas = parsearDiapositivasSolo(texto);
+
+    const resto = extraerRestoDelContenido();
+    const contenidoCompleto = { diapositivas: nuevasDiapositivas, ...resto };
+    slidesActuales = construirSlides(contenidoCompleto);
+
+    const markdownNuevo = reconstruirMarkdown(contenidoCompleto);
+    driveFileIdActivo = await guardarSesionEnDrive(cursoActivoSlug, sesionActivaNum, markdownNuevo, driveFileIdActivo);
+
+    modeloUsadoActivo = obtenerUltimoProveedor() || modeloElegido || "Auto";
+    modoGeneradoActivo = modoElegido;
+    const refSesion = doc(db, "cursos", cursoActivoSlug, "sesiones", "sesion_" + sesionActivaNum);
+    await setDoc(refSesion, {
+      modelo_usado: modeloUsadoActivo,
+      modo_generado: modoGeneradoActivo,
+      fecha_generacion: new Date().toISOString()
+    }, { merge: true });
+
+    slideIdx = 0;
+    mostrarEstadoFooter("Teoría regenerada y guardada en Drive");
+    renderSlide();
+  } catch (err) {
+    alert("Error al regenerar la teoría: " + err.message);
+    mostrarEstadoFooter("Error al regenerar teoría");
+    if (cont) cont.style.opacity = "1";
+  }
 }
 
 function renderProblema(s, kicker, title, body, svgBox) {

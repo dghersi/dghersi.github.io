@@ -1,5 +1,6 @@
 import { llamarIA } from "../SetupJs/ia-cliente.js";
 import { construirPromptChat } from "../FuncionesJs/prompts.js";
+import { formatearTexto } from "../FuncionesJs/formato.js";
 import { mostrarEstadoFooter } from "./estado.js";
 
 // ==========================================
@@ -54,10 +55,11 @@ function renderMensajes() {
   historial.forEach(m => {
     const burbuja = document.createElement("div");
     burbuja.className = "chat-burbuja " + (m.rol === "usuario" ? "usuario" : "ia");
-    burbuja.textContent = m.texto;
+    burbuja.innerHTML = formatearTexto(m.texto);
     cont.appendChild(burbuja);
   });
   cont.scrollTop = cont.scrollHeight;
+  if (window.MathJax) MathJax.typesetPromise([cont]).catch(() => {});
 }
 
 function agregarBurbujaPendiente() {

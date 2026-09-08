@@ -121,6 +121,12 @@
         </div>
         <label>Tema / temario de esta sesión (pega la línea del sílabo) *</label>
         <textarea id="temaSesion" required placeholder="ECUACIÓN GENERAL DE LA HIDROSTÁTICA. Estática de los fluidos..."></textarea>
+        <label>Modo</label>
+        <select id="modoGenerar">
+          <option value="corto">Corto (1-2 diapositivas)</option>
+          <option value="largo" selected>Largo (3-5 diapositivas)</option>
+          <option value="extenso">Extenso (6-8 diapositivas, con ejemplos)</option>
+        </select>
         <button class="primary" id="btnGenerar">Generar con IA</button>
         <p class="msg" id="msgGenerar"></p>
       </fieldset>
@@ -137,6 +143,12 @@
           Regenerar sesiones que ya existen (por defecto se saltan)
         </label>
         <p class="hint">Usa la "Lista completa de sesiones" guardada en el curso. El log de avance aparece en el panel derecho.</p>
+        <label>Modo (aplica a todas las sesiones del lote)</label>
+        <select id="modoGenerarTodas">
+          <option value="corto">Corto (1-2 diapositivas)</option>
+          <option value="largo" selected>Largo (3-5 diapositivas)</option>
+          <option value="extenso">Extenso (6-8 diapositivas, con ejemplos)</option>
+        </select>
         <button class="primary" id="btnGenerarTodas">Generar todas</button>
         <button class="secondary" id="btnDetenerTodas" style="display:none">Detener</button>
       </fieldset>

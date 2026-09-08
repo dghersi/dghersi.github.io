@@ -1,6 +1,6 @@
 import { db, doc, setDoc, getDoc, poblarSelectCursos } from "../SetupJs/firebase-cliente.js";
 import { iniciarTokenClient, solicitarAccesoDrive, guardarSesionEnDrive } from "../SetupJs/drive.js";
-import { llamarIA } from "../SetupJs/ia-cliente.js";
+import { llamarIA, obtenerUltimoProveedor } from "../SetupJs/ia-cliente.js";
 import { construirPrompt } from "../FuncionesJs/prompts.js";
 import { parsearListaSesiones } from "../FuncionesJs/parsers.js";
 import { mostrarEstadoFooter, actualizarPillDrive, actualizarPillIA } from "./estado.js";
@@ -139,6 +139,7 @@ function initGenerarSesion() {
     const slug = document.getElementById("selectCursoGenerar").value;
     const numSesion = document.getElementById("numSesion").value;
     const tema = document.getElementById("temaSesion").value.trim();
+    const modo = document.getElementById("modoGenerar").value;
     if (!slug || !numSesion || !tema) {
       msg.textContent = "Selecciona el curso, el número de sesión y pega el tema."; msg.className = "msg error"; return;
     }
@@ -150,7 +151,7 @@ function initGenerarSesion() {
       const cursoSnap = await getDoc(doc(db, "cursos", slug));
       if (!cursoSnap.exists()) throw new Error("Curso no encontrado.");
       const curso = cursoSnap.data();
-      const prompt = construirPrompt(curso, numSesion, tema);
+      const prompt = construirPrompt(curso, numSesion, tema, modo);
       const markdown = await llamarIA(prompt, (texto) => { msg.textContent = texto; });
       const refSesion = doc(db, "cursos", slug, "sesiones", "sesion_" + numSesion);
       const existente = await getDoc(refSesion);
@@ -159,7 +160,9 @@ function initGenerarSesion() {
       await setDoc(refSesion, {
         drive_file_id: fileId,
         drive_file_name: `${slug}_sesion_${numSesion}.md`,
-        tema, fecha_generacion: new Date().toISOString()
+        tema, fecha_generacion: new Date().toISOString(),
+        modelo_usado: obtenerUltimoProveedor() || "Auto",
+        modo_generado: modo
       });
       msg.textContent = `✓ Sesión ${numSesion} generada y guardada en Drive. Ve a "Reproductor" para estudiarla.`;
       msg.className = "msg ok";
@@ -200,6 +203,7 @@ function initGenerarTodas() {
       return;
     }
     const regenerar = document.getElementById("regenerarExistentes").checked;
+    const modo = document.getElementById("modoGenerarTodas").value;
     logTodas.innerHTML = "";
     logTodas.style.display = "block";
     logLinea(`Encontradas ${sesiones.length} sesiones en la lista. Empezando…`);
@@ -225,7 +229,7 @@ function initGenerarTodas() {
       }
       logLinea(`Sesión ${s.numero}: generando…`);
       try {
-        const prompt = construirPrompt(curso, s.numero, s.tema);
+        const prompt = construirPrompt(curso, s.numero, s.tema, modo);
         const markdown = await llamarIA(prompt);
         const existePointer = await getDoc(refSesion);
         const fileIdExistente = (regenerar && existePointer.exists()) ? existePointer.data().drive_file_id : null;
@@ -233,7 +237,9 @@ function initGenerarTodas() {
         await setDoc(refSesion, {
           drive_file_id: fileIdFinal,
           drive_file_name: `${slug}_sesion_${s.numero}.md`,
-          tema: s.tema, fecha_generacion: new Date().toISOString()
+          tema: s.tema, fecha_generacion: new Date().toISOString(),
+          modelo_usado: obtenerUltimoProveedor() || "Auto",
+          modo_generado: modo
         });
         logLinea(`Sesión ${s.numero}: ✓ generada.`, "ok");
         generadas++;

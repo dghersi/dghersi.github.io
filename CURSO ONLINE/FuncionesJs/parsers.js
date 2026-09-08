@@ -96,6 +96,62 @@ export function parsearExamenSolo(texto) {
   };
 }
 
+// Parsea el resultado de regenerar el bloque COMPLETO de diapositivas de teoría
+// (una o más "## Diapositiva N: título" seguidas). Usado por el badge Modelo/Modo.
+export function parsearDiapositivasSolo(texto) {
+  const diapositivas = [];
+  const secciones = texto.split(/\n(?=##\s)/);
+  secciones.forEach(sec => {
+    const headerMatch = sec.match(/^##\s*(.+)/);
+    if (!headerMatch) return;
+    const header = headerMatch[1].trim();
+    if (!/^Diapositiva/i.test(header)) return;
+    const cuerpo = sec.replace(/^##.*\n?/, "");
+    const titulo = header.replace(/^Diapositiva\s*\d*:?\s*/i, "").trim();
+    let contenido = cuerpo, svg = "";
+    const svgMatch = cuerpo.match(/```svg\s*([\s\S]*?)```/i);
+    if (svgMatch) {
+      svg = svgMatch[1].trim();
+      contenido = cuerpo.replace(svgMatch[0], "").trim();
+    }
+    diapositivas.push({ titulo, contenido: contenido.trim(), svg });
+  });
+  if (diapositivas.length === 0) {
+    throw new Error("No se encontraron diapositivas nuevas en la respuesta de la IA.");
+  }
+  return diapositivas;
+}
+
+// Serializa {diapositivas, problemas, codigo, examen} de vuelta a Markdown,
+// con el mismo formato que parsearMarkdown espera leer. Se usa para reconstruir
+// el archivo completo en Drive después de regenerar solo el bloque de teoría.
+export function reconstruirMarkdown(contenido) {
+  const partes = [];
+  (contenido.diapositivas || []).forEach((d, i) => {
+    partes.push(
+      `## Diapositiva ${i + 1}: ${d.titulo}\n${d.contenido}` +
+      (d.svg ? `\n\n\`\`\`svg\n${d.svg}\n\`\`\`` : "")
+    );
+  });
+  (contenido.problemas || []).forEach((p, i) => {
+    partes.push(
+      `## Problema ${i + 1}\n\n**Enunciado:**\n${p.enunciado}` +
+      (p.svg ? `\n\n\`\`\`svg\n${p.svg}\n\`\`\`` : "") +
+      `\n\n**Solución:**\n${p.solucion}`
+    );
+  });
+  (contenido.codigo || []).forEach(c => {
+    partes.push(`## Código: ${c.problema_ref}\n\`\`\`\n${c.codigo}\n\`\`\``);
+  });
+  if (contenido.examen) {
+    const preguntasTxt = contenido.examen.preguntas.map((p, i) => `${i + 1}. ${p.pregunta}`).join("\n");
+    const respuestasTxt = contenido.examen.preguntas.map((p, i) => `${i + 1}. ${p.respuesta}`).join("\n");
+    partes.push(`## Examen de práctica\n**Tiempo estimado:** ${contenido.examen.tiempo_estimado_min || "?"} minutos\n\n${preguntasTxt}`);
+    partes.push(`## Clave de respuestas\n${respuestasTxt}`);
+  }
+  return partes.join("\n\n");
+}
+
 // Parsea la lista de sesiones del curso, formato "N | Tema" una por línea.
 export function parsearListaSesiones(texto) {
   const lineas = texto.split("\n").map(l => l.trim()).filter(l => l.length > 0);
