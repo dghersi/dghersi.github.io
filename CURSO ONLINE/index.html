@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Creador y Reproductor de Cursos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    --bg: #14171c; --panel: #1c2028; --border: #2b303a; --text: #e8eaed;
+    --muted: #9aa1ac; --accent: #5fb3a3; --accent-hover: #4c9a8b; --danger: #d9756a;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); padding:2rem 1rem 4rem; }
+  .wrap { max-width: 820px; margin:0 auto; }
+  h1 { font-size:1.5rem; font-weight:600; margin-bottom:.25rem; }
+  .subtitle { color:var(--muted); font-size:.88rem; margin-bottom:1.5rem; }
+  .tabs { display:flex; gap:.5rem; margin-bottom:1.5rem; border-bottom:1px solid var(--border); }
+  .tab { background:none; border:none; color:var(--muted); font-size:.95rem; padding:.75rem .25rem; cursor:pointer; border-bottom:2px solid transparent; }
+  .tab.active { color:var(--text); border-bottom-color:var(--accent); }
+  .panel { display:none; } .panel.active { display:block; }
+  label { display:block; font-size:.85rem; color:var(--muted); margin:1rem 0 .35rem; }
+  input, textarea, select {
+    width:100%; background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:.6rem .7rem; border-radius:6px; font-size:.92rem; font-family:inherit;
+  }
+  textarea { resize:vertical; min-height:80px; }
+  textarea.mono { font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:.82rem; }
+  button.primary { margin-top:1.25rem; background:var(--accent); color:#0e1512; border:none; padding:.7rem 1.3rem; border-radius:6px; font-size:.95rem; font-weight:600; cursor:pointer; }
+  button.primary:hover { background:var(--accent-hover); }
+  button.primary:disabled { opacity:.5; cursor:not-allowed; }
+  button.secondary { margin-top:.6rem; background:transparent; color:var(--accent); border:1px solid var(--accent); padding:.5rem .9rem; border-radius:6px; cursor:pointer; font-size:.85rem; }
+  button.icon { background:var(--panel); border:1px solid var(--border); color:var(--text); padding:.5rem 1rem; border-radius:6px; cursor:pointer; font-size:.85rem; }
+  button.icon:disabled { opacity:.35; cursor:not-allowed; }
+  .msg { margin-top:.75rem; font-size:.85rem; min-height:1.2em; }
+  .msg.ok { color:var(--accent); } .msg.error { color:var(--danger); }
+  .row { display:flex; gap:.75rem; } .row > div { flex:1; }
+  .hint { color:var(--muted); font-size:.76rem; margin-top:.25rem; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1.25rem 1.5rem; margin-top:1rem; }
+  fieldset { border:1px solid var(--border); border-radius:8px; padding:1rem; margin-top:1.5rem; }
+  legend { padding:0 .5rem; color:var(--muted); font-size:.85rem; }
+
+  /* Reproductor */
+  .viewer { min-height: 280px; }
+  .progressbar { height:4px; background:var(--border); border-radius:2px; overflow:hidden; margin:1rem 0; }
+  .progressbar-fill { height:100%; background:var(--accent); transition:width .2s; }
+  .slide-kicker { font-size:.78rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em; margin-bottom:.4rem; }
+  .slide-title { font-size:1.2rem; font-weight:600; margin-bottom:.75rem; }
+  .slide-body { font-size:.95rem; line-height:1.65; white-space:pre-wrap; }
+  .slide-svg { margin:1rem 0; text-align:center; }
+  .nav-row { display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem; }
+  .status-save { font-size:.78rem; color:var(--muted); }
+  .respuesta { border-top:1px solid var(--border); margin-top:.6rem; padding-top:.6rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Creador y Reproductor de Cursos</h1>
+  <p class="subtitle">Genera sesiones con Gemini, guárdalas en Firebase, y estúdialas — todo en una sola app.</p>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="crear">Crear Curso</button>
+    <button class="tab" data-tab="reproductor">Reproductor</button>
+  </div>
+
+  <!-- ============ TAB: CREAR CURSO ============ -->
+  <section class="panel active" id="panel-crear">
+
+    <fieldset>
+      <legend>Conexión con Google Drive</legend>
+      <label>Client ID de OAuth</label>
+      <input id="driveClientId" placeholder="123456789-abc.apps.googleusercontent.com" />
+      <p class="hint">Lo generas en Google Cloud Console (proyecto Cursos-Aprendizaje-2026). No es secreto, se puede guardar en este navegador.</p>
+      <button class="secondary" id="btnConectarDrive">Conectar con Google Drive</button>
+      <p class="msg" id="estadoDrive">No conectado.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Conexión con Gemini</legend>
+      <label>API Key de Gemini (se guarda solo en este navegador, nunca en Firebase)</label>
+      <input id="apiKey" type="password" placeholder="AIza..." />
+      <label>Modelo</label>
+      <input id="modelo" value="gemini-2.5-flash" />
+      <p class="hint">Consigue tu API key gratis en aistudio.google.com/apikey. Si el modelo da error, revisa el nombre vigente en ai.google.dev/gemini-api/docs/models.</p>
+      <button class="secondary" id="btnGuardarKey">Guardar API key</button>
+      <p class="msg" id="msgKey"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>1. Datos del curso</legend>
+      <label>Editar curso existente</label>
+      <select id="selectEditar"><option value="">— Crear curso nuevo —</option></select>
+
+      <label>Nombre del curso *</label>
+      <input id="nombre_curso" required placeholder="Mecánica de Fluidos e Hidráulica" />
+      <label>Slug (sin espacios ni tildes) *</label>
+      <input id="slug_curso" required pattern="[a-z0-9\-]+" placeholder="fluidos" />
+      <label>Rol del tutor experto *</label>
+      <input id="rol_experto" required placeholder="tutor experto en Mecánica de Fluidos e Hidráulica" />
+      <label>Fuente principal *</label>
+      <input id="fuente_principal" required placeholder="https://ocw.ehu.eus/course/view.php?id=450&lang=es" />
+      <label>Fuentes complementarias</label>
+      <textarea id="fuentes_complementarias" placeholder="White, Mott, Rocha Felices..."></textarea>
+      <div class="row">
+        <div><label>Software (o NINGUNO)</label><input id="software" value="NINGUNO" /></div>
+        <div><label>Idioma</label><input id="idioma" value="Español" /></div>
+      </div>
+      <label>Notación especial</label>
+      <input id="notacion_especial" placeholder="estándar del campo" />
+      <label>Lista completa de sesiones (una por línea, formato: N | Tema)</label>
+      <textarea id="lista_sesiones" class="mono" rows="10" placeholder="1 | LOS FLUIDOS. Definición de Mecánica de Fluidos...&#10;2 | PRESIÓN. Propiedades de la presión...&#10;3 | ECUACIÓN GENERAL DE LA HIDROSTÁTICA..."></textarea>
+      <p class="hint">Esta lista es solo para poder generar todas las sesiones de un clic (sección 3). Si prefieres generar una por una, puedes dejarla vacía y usar la sección 2.</p>
+      <button class="primary" id="btnGuardarCurso">Guardar datos del curso</button>
+      <p class="msg" id="msgCurso"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>2. Generar una sesión</legend>
+      <label>Curso</label>
+      <select id="selectCursoGenerar"><option value="">— Selecciona un curso —</option></select>
+      <div class="row">
+        <div><label>Número de sesión *</label><input id="numSesion" type="number" min="1" placeholder="3" /></div>
+      </div>
+      <label>Tema / temario de esta sesión (pega la línea del sílabo) *</label>
+      <textarea id="temaSesion" required placeholder="ECUACIÓN GENERAL DE LA HIDROSTÁTICA. Estática de los fluidos..."></textarea>
+      <button class="primary" id="btnGenerar">Generar con Gemini</button>
+      <p class="msg" id="msgGenerar"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>3. Generar todas las sesiones pendientes</legend>
+      <label>Curso</label>
+      <select id="selectCursoGenerarTodas"><option value="">— Selecciona un curso —</option></select>
+      <label style="display:flex; align-items:center; gap:.5rem; margin-top:1rem">
+        <input type="checkbox" id="regenerarExistentes" style="width:auto" />
+        Regenerar sesiones que ya existen (por defecto se saltan)
+      </label>
+      <p class="hint">Usa la "Lista completa de sesiones" guardada en el curso (sección 1). Genera una por una, con un par de segundos de pausa entre cada llamada para no saturar la API — puede tardar varios minutos si tu curso tiene muchas sesiones.</p>
+      <button class="primary" id="btnGenerarTodas">Generar todas</button>
+      <button class="secondary" id="btnDetenerTodas" style="display:none">Detener</button>
+      <div class="card" id="logTodas" style="display:none; max-height:260px; overflow-y:auto; font-size:.82rem; font-family:ui-monospace,monospace"></div>
+    </fieldset>
+  </section>
+
+  <!-- ============ TAB: REPRODUCTOR ============ -->
+  <section class="panel" id="panel-reproductor">
+    <label>Curso</label>
+    <select id="selectCursoJugar"><option value="">— Selecciona un curso —</option></select>
+    <label>Sesión</label>
+    <select id="selectSesionJugar"><option value="">— Selecciona un curso primero —</option></select>
+    <button class="primary" id="btnCargarSesion">Cargar sesión</button>
+    <p class="msg" id="msgReproductor"></p>
+
+    <div class="card viewer" id="viewer" style="display:none">
+      <div class="progressbar"><div class="progressbar-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="slide-kicker" id="slideKicker"></div>
+      <div class="slide-title" id="slideTitle"></div>
+      <div class="slide-svg" id="slideSvg"></div>
+      <div class="slide-body" id="slideBody"></div>
+      <div class="nav-row">
+        <button class="icon" id="btnAnterior">← Anterior</button>
+        <span class="status-save" id="statusSave"></span>
+        <button class="icon" id="btnSiguiente">Siguiente →</button>
+      </div>
+      <button class="secondary" id="btnReiniciar" style="margin-top:1rem">Reiniciar progreso de esta sesión</button>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import {
+    getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDvj86PopHDdwrov-Y5-iA8JIA1HHsf7yM",
+    authDomain: "cursos-aprendizaje-2026.firebaseapp.com",
+    projectId: "cursos-aprendizaje-2026",
+    storageBucket: "cursos-aprendizaje-2026.firebasestorage.app",
+    messagingSenderId: "801883227556",
+    appId: "1:801883227556:web:8d9599704e420360ceed31"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // ---------- Google Drive (OAuth + archivos) ----------
+  let driveAccessToken = null;
+  let tokenClient = null;
+
+  const driveClientIdInput = document.getElementById("driveClientId");
+  driveClientIdInput.value = localStorage.getItem("drive_client_id") || "";
+
+  function iniciarTokenClient(clientId) {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: "https://www.googleapis.com/auth/drive.file",
+      callback: (resp) => {
+        if (resp.error) {
+          document.getElementById("estadoDrive").textContent = "Error al conectar: " + resp.error;
+          document.getElementById("estadoDrive").className = "msg error";
+          return;
+        }
+        driveAccessToken = resp.access_token;
+        document.getElementById("estadoDrive").textContent = "✓ Conectado a Google Drive.";
+        document.getElementById("estadoDrive").className = "msg ok";
+      }
+    });
+  }
+
+  document.getElementById("btnConectarDrive").addEventListener("click", () => {
+    const clientId = driveClientIdInput.value.trim();
+    if (!clientId) { alert("Pega primero tu Client ID de OAuth."); return; }
+    localStorage.setItem("drive_client_id", clientId);
+    if (!tokenClient) iniciarTokenClient(clientId);
+    tokenClient.requestAccessToken();
+  });
+
+  function requiereDrive() {
+    if (!driveAccessToken) throw new Error('No estás conectado a Google Drive. Ve arriba y presiona "Conectar con Google Drive".');
+  }
+
+  async function obtenerCarpetaCursos() {
+    let folderId = localStorage.getItem("drive_folder_id");
+    if (folderId) return folderId;
+    const q = encodeURIComponent("name='Cursos-Aprendizaje' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, {
+      headers: { Authorization: `Bearer ${driveAccessToken}` }
+    });
+    if (res.status === 401) throw new Error("Tu sesión de Drive expiró. Vuelve a conectar.");
+    const data = await res.json();
+    if (data.files && data.files.length > 0) {
+      folderId = data.files[0].id;
+    } else {
+      const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${driveAccessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Cursos-Aprendizaje", mimeType: "application/vnd.google-apps.folder" })
+      });
+      const createData = await createRes.json();
+      folderId = createData.id;
+    }
+    localStorage.setItem("drive_folder_id", folderId);
+    return folderId;
+  }
+
+  async function crearArchivoDrive(nombre, contenido, folderId) {
+    const boundary = "cursos_boundary_" + Date.now();
+    const metadata = { name: nombre, parents: [folderId], mimeType: "text/markdown" };
+    const body =
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+      `--${boundary}\r\nContent-Type: text/markdown; charset=UTF-8\r\n\r\n${contenido}\r\n` +
+      `--${boundary}--`;
+    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${driveAccessToken}`, "Content-Type": `multipart/related; boundary=${boundary}` },
+      body
+    });
+    if (res.status === 401) throw new Error("Tu sesión de Drive expiró. Vuelve a conectar.");
+    if (!res.ok) throw new Error("Error creando archivo en Drive: " + (await res.text()).slice(0, 200));
+    const data = await res.json();
+    return data.id;
+  }
+
+  async function actualizarArchivoDrive(fileId, contenido) {
+    const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${driveAccessToken}`, "Content-Type": "text/markdown; charset=UTF-8" },
+      body: contenido
+    });
+    if (res.status === 401) throw new Error("Tu sesión de Drive expiró. Vuelve a conectar.");
+    if (!res.ok) throw new Error("Error actualizando archivo en Drive: " + (await res.text()).slice(0, 200));
+  }
+
+  async function leerArchivoDrive(fileId) {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+      headers: { Authorization: `Bearer ${driveAccessToken}` }
+    });
+    if (res.status === 401) throw new Error("Tu sesión de Drive expiró. Vuelve a conectar.");
+    if (!res.ok) throw new Error("Error leyendo archivo de Drive: " + (await res.text()).slice(0, 200));
+    return await res.text();
+  }
+
+  async function guardarSesionEnDrive(slug, numSesion, contenidoMarkdown, fileIdExistente) {
+    requiereDrive();
+    if (fileIdExistente) {
+      await actualizarArchivoDrive(fileIdExistente, contenidoMarkdown);
+      return fileIdExistente;
+    }
+    const folderId = await obtenerCarpetaCursos();
+    const nombre = `${slug}_sesion_${numSesion}.md`;
+    return await crearArchivoDrive(nombre, contenidoMarkdown, folderId);
+  }
+
+  // ---------- Tabs ----------
+  document.querySelectorAll(".tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+      if (btn.dataset.tab === "reproductor") poblarSelectCursos(document.getElementById("selectCursoJugar"));
+    });
+  });
+
+  // ---------- API key local ----------
+  const apiKeyInput = document.getElementById("apiKey");
+  const modeloInput = document.getElementById("modelo");
+  apiKeyInput.value = localStorage.getItem("gemini_api_key") || "";
+  modeloInput.value = localStorage.getItem("gemini_modelo") || "gemini-2.5-flash";
+  document.getElementById("btnGuardarKey").addEventListener("click", () => {
+    localStorage.setItem("gemini_api_key", apiKeyInput.value.trim());
+    localStorage.setItem("gemini_modelo", modeloInput.value.trim());
+    const m = document.getElementById("msgKey");
+    m.textContent = "✓ Guardado en este navegador.";
+    m.className = "msg ok";
+  });
+
+  // ---------- Firestore helpers ----------
+  async function listarCursos() {
+    const snap = await getDocs(collection(db, "cursos"));
+    const out = [];
+    snap.forEach(d => out.push({ slug: d.id, ...d.data() }));
+    return out;
+  }
+
+  async function poblarSelectCursos(selectEl, incluirVacio = "— Selecciona un curso —") {
+    const cursos = await listarCursos();
+    selectEl.innerHTML = `<option value="">${incluirVacio}</option>`;
+    cursos.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.slug;
+      opt.textContent = `${c.nombre_curso} (${c.slug})`;
+      selectEl.appendChild(opt);
+    });
+  }
+
+  poblarSelectCursos(document.getElementById("selectEditar"), "— Crear curso nuevo —");
+  poblarSelectCursos(document.getElementById("selectCursoGenerar"));
+  poblarSelectCursos(document.getElementById("selectCursoGenerarTodas"));
+
+  // ---------- Editar curso existente ----------
+  document.getElementById("selectEditar").addEventListener("change", async (e) => {
+    const slug = e.target.value;
+    const slugInput = document.getElementById("slug_curso");
+    if (!slug) {
+      ["nombre_curso","rol_experto","fuente_principal","fuentes_complementarias","notacion_especial","lista_sesiones"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("software").value = "NINGUNO";
+      document.getElementById("idioma").value = "Español";
+      slugInput.value = ""; slugInput.disabled = false;
+      return;
+    }
+    const snap = await getDoc(doc(db, "cursos", slug));
+    if (!snap.exists()) return;
+    const c = snap.data();
+    document.getElementById("nombre_curso").value = c.nombre_curso || "";
+    slugInput.value = slug; slugInput.disabled = true;
+    document.getElementById("rol_experto").value = c.rol_experto || "";
+    document.getElementById("fuente_principal").value = c.fuente_principal || "";
+    document.getElementById("fuentes_complementarias").value = c.fuentes_complementarias || "";
+    document.getElementById("software").value = c.software || "NINGUNO";
+    document.getElementById("idioma").value = c.idioma || "Español";
+    document.getElementById("notacion_especial").value = c.notacion_especial || "";
+    document.getElementById("lista_sesiones").value = c.lista_sesiones || "";
+  });
+
+  // ---------- Guardar curso ----------
+  document.getElementById("btnGuardarCurso").addEventListener("click", async () => {
+    const msg = document.getElementById("msgCurso");
+    const slug = document.getElementById("slug_curso").value.trim();
+    const nombre = document.getElementById("nombre_curso").value.trim();
+    if (!slug || !nombre || !document.getElementById("rol_experto").value.trim() || !document.getElementById("fuente_principal").value.trim()) {
+      msg.textContent = "Completa los campos obligatorios (*)."; msg.className = "msg error"; return;
+    }
+    msg.textContent = "Guardando…"; msg.className = "msg";
+    try {
+      const existente = await getDoc(doc(db, "cursos", slug));
+      const data = {
+        nombre_curso: nombre,
+        rol_experto: document.getElementById("rol_experto").value.trim(),
+        fuente_principal: document.getElementById("fuente_principal").value.trim(),
+        fuentes_complementarias: document.getElementById("fuentes_complementarias").value.trim(),
+        software: document.getElementById("software").value.trim() || "NINGUNO",
+        idioma: document.getElementById("idioma").value.trim() || "Español",
+        notacion_especial: document.getElementById("notacion_especial").value.trim() || "estándar del campo",
+        lista_sesiones: document.getElementById("lista_sesiones").value.trim(),
+        fecha_actualizacion: new Date().toISOString(),
+        fecha_creacion: existente.exists() ? existente.data().fecha_creacion : new Date().toISOString()
+      };
+      await setDoc(doc(db, "cursos", slug), data, { merge: true });
+      msg.textContent = `✓ Curso "${nombre}" guardado.`; msg.className = "msg ok";
+      poblarSelectCursos(document.getElementById("selectEditar"), "— Crear curso nuevo —");
+      poblarSelectCursos(document.getElementById("selectCursoGenerar"));
+      poblarSelectCursos(document.getElementById("selectCursoGenerarTodas"));
+    } catch (err) {
+      msg.textContent = "Error: " + err.message; msg.className = "msg error";
+    }
+  });
+
+  // ---------- Prompt para Gemini ----------
+  function construirPrompt(curso, numSesion, tema) {
+    return `Eres ${curso.rol_experto}. Vas a generar el material de estudio de UNA sesión de un curso, en formato Markdown limpio y legible (alguien lo podrá abrir directo en Google Drive o cualquier editor de texto).
+
+Fuente principal de contenido: ${curso.fuente_principal}
+Fuentes complementarias: ${curso.fuentes_complementarias || "ninguna adicional"}
+Nunca reproduzcas texto extenso ni literal de las fuentes — reformula con tus propias palabras. Si no estás seguro de un dato, dilo explícitamente en vez de inventarlo.
+Idioma de salida: ${curso.idioma}
+Notación especial: ${curso.notacion_especial}
+Software para ejemplos de código: ${curso.software} (si es "NINGUNO", omite por completo la sección de código)
+
+Sesión número ${numSesion}. Tema de esta sesión (tal como aparece en el sílabo):
+"""
+${tema}
+"""
+
+Devuelve EXCLUSIVAMENTE Markdown válido con esta estructura EXACTA de encabezados
+(nada de texto antes del primer encabezado ni después del último; las fórmulas LaTeX
+van con $...$ y backslash normal, sin escapar nada, ya que esto NO es JSON):
+
+# Sesión ${numSesion}: (título breve de la sesión)
+
+## Diapositiva 1: (título)
+(explicación clara del concepto)
+
+\`\`\`svg
+(código <svg>...</svg> simple si ayuda a entender; omite este bloque si no hace falta)
+\`\`\`
+
+## Diapositiva 2: (título)
+(repite "## Diapositiva N: título" — mínimo 4 diapositivas)
+
+## Problema 1
+
+**Enunciado:**
+(enunciado completo con datos numéricos)
+
+**Solución:**
+(desarrollo paso a paso hasta el resultado)
+
+(repite "## Problema N" — mínimo 5, de menor a mayor dificultad)
+
+## Código: (a qué problema corresponde, ej. "Problema 2")
+\`\`\`
+(código completo y ejecutable)
+\`\`\`
+(repite un bloque "## Código: ..." por cada problema con código; omite toda esta
+sección si el software es NINGUNO)
+
+## Examen de práctica
+**Tiempo estimado:** (número) minutos
+
+1. (pregunta 1)
+2. (pregunta 2)
+(entre 5 y 8 preguntas en total, dificultad media-alta, mezclando teoría y problemas aplicados)
+
+## Clave de respuestas
+1. (respuesta 1)
+2. (respuesta 2)
+(mismo número y orden que las preguntas del examen)`;
+  }
+
+  async function llamarGemini(promptText) {
+    const apiKey = localStorage.getItem("gemini_api_key");
+    const modelo = localStorage.getItem("gemini_modelo") || "gemini-2.5-flash";
+    if (!apiKey) throw new Error("Falta la API key de Gemini (guárdala arriba).");
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: promptText }] }],
+        generationConfig: { temperature: 0.4 }
+      })
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Error de la API (${res.status}): ${errText.slice(0, 300)}`);
+    }
+    const data = await res.json();
+    let text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error("La respuesta de Gemini vino vacía o con formato inesperado.");
+    text = text.trim();
+    if (text.startsWith("```")) {
+      text = text.replace(/^```(markdown|md)?/i, "").replace(/```$/, "").trim();
+    }
+    return text;
+  }
+
+  // Extrae el valor de un campo "**Campo:**" hasta el siguiente campo conocido o el final del bloque.
+  function extraerCampoMd(bloque, campo, siguientesCampos) {
+    const corte = siguientesCampos.length
+      ? `(?=\\*\\*(${siguientesCampos.join("|")}):\\*\\*)`
+      : "$";
+    const regex = new RegExp(`\\*\\*${campo}:\\*\\*\\s*([\\s\\S]*?)\\s*${corte}`, "i");
+    const m = bloque.match(regex);
+    return m ? m[1].trim() : "";
+  }
+
+  // Convierte el Markdown con encabezados "## " en la misma estructura
+  // {diapositivas, problemas, codigo, examen} que usa el reproductor.
+  function parsearMarkdown(texto) {
+    const diapositivas = [], problemas = [], codigo = [];
+    let examenPreguntas = [], examenRespuestas = [], tiempoEstimado = null;
+
+    const secciones = texto.split(/\n(?=##\s)/);
+    secciones.forEach(sec => {
+      const headerMatch = sec.match(/^##\s*(.+)/);
+      if (!headerMatch) return; // preámbulo o título H1, se ignora
+      const header = headerMatch[1].trim();
+      const cuerpo = sec.replace(/^##.*\n?/, "");
+
+      if (/^Diapositiva/i.test(header)) {
+        const titulo = header.replace(/^Diapositiva\s*\d*:?\s*/i, "").trim();
+        let contenido = cuerpo, svg = "";
+        const svgMatch = cuerpo.match(/```svg\s*([\s\S]*?)```/i);
+        if (svgMatch) {
+          svg = svgMatch[1].trim();
+          contenido = cuerpo.replace(svgMatch[0], "").trim();
+        }
+        diapositivas.push({ titulo, contenido: contenido.trim(), svg });
+      } else if (/^Problema/i.test(header)) {
+        problemas.push({
+          enunciado: extraerCampoMd(cuerpo, "Enunciado", ["Solución", "Solucion"]),
+          solucion: extraerCampoMd(cuerpo, "Soluci[oó]n", [])
+        });
+      } else if (/^C[oó]digo/i.test(header)) {
+        const ref = header.replace(/^C[oó]digo:?\s*/i, "").trim();
+        const codeMatch = cuerpo.match(/```[a-z]*\s*([\s\S]*?)```/i);
+        codigo.push({ problema_ref: ref, codigo: codeMatch ? codeMatch[1].trim() : cuerpo.trim() });
+      } else if (/^Examen/i.test(header)) {
+        const tiempoMatch = cuerpo.match(/\*\*Tiempo estimado:\*\*\s*(\d+)/i);
+        tiempoEstimado = tiempoMatch ? Number(tiempoMatch[1]) : null;
+        examenPreguntas = [...cuerpo.matchAll(/^\d+\.\s*(.+)$/gm)].map(m => m[1].trim());
+      } else if (/^Clave/i.test(header)) {
+        examenRespuestas = [...cuerpo.matchAll(/^\d+\.\s*(.+)$/gm)].map(m => m[1].trim());
+      }
+    });
+
+    if (diapositivas.length === 0) {
+      throw new Error("No se encontraron diapositivas en el Markdown — revisa el formato devuelto por Gemini.");
+    }
+    const examen = examenPreguntas.length > 0
+      ? { preguntas: examenPreguntas.map((p, i) => ({ pregunta: p, respuesta: examenRespuestas[i] || "" })), tiempo_estimado_min: tiempoEstimado }
+      : null;
+    return { diapositivas, problemas, codigo, examen };
+  }
+
+  document.getElementById("btnGenerar").addEventListener("click", async () => {
+    const msg = document.getElementById("msgGenerar");
+    const slug = document.getElementById("selectCursoGenerar").value;
+    const numSesion = document.getElementById("numSesion").value;
+    const tema = document.getElementById("temaSesion").value.trim();
+    if (!slug || !numSesion || !tema) {
+      msg.textContent = "Selecciona el curso, el número de sesión y pega el tema."; msg.className = "msg error"; return;
+    }
+    const btn = document.getElementById("btnGenerar");
+    btn.disabled = true;
+    msg.textContent = "Generando con Gemini… esto puede tardar 20-40 segundos."; msg.className = "msg";
+    try {
+      const cursoSnap = await getDoc(doc(db, "cursos", slug));
+      if (!cursoSnap.exists()) throw new Error("Curso no encontrado.");
+      const curso = cursoSnap.data();
+      const prompt = construirPrompt(curso, numSesion, tema);
+      const markdown = await llamarGemini(prompt);
+      const refSesion = doc(db, "cursos", slug, "sesiones", "sesion_" + numSesion);
+      const existente = await getDoc(refSesion);
+      const fileIdExistente = existente.exists() ? existente.data().drive_file_id : null;
+      const fileId = await guardarSesionEnDrive(slug, numSesion, markdown, fileIdExistente);
+      await setDoc(refSesion, {
+        drive_file_id: fileId,
+        drive_file_name: `${slug}_sesion_${numSesion}.md`,
+        tema, fecha_generacion: new Date().toISOString()
+      });
+      msg.textContent = `✓ Sesión ${numSesion} generada y guardada en Drive. Ve a "Reproductor" para estudiarla.`;
+      msg.className = "msg ok";
+    } catch (err) {
+      msg.textContent = "Error: " + err.message; msg.className = "msg error";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---------- Generar todas las sesiones ----------
+  function parsearListaSesiones(texto) {
+    const lineas = texto.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+    const sesiones = [];
+    const regex = /^(?:sesi[oó]n\s*)?(\d+)\s*[\|:]\s*(.+)$/i;
+    lineas.forEach(linea => {
+      const m = linea.match(regex);
+      if (m) sesiones.push({ numero: m[1], tema: m[2].trim() });
+    });
+    return sesiones;
+  }
+
+  let detenerLote = false;
+  const logTodas = document.getElementById("logTodas");
+  function logLinea(texto, tipo = "") {
+    logTodas.style.display = "block";
+    const p = document.createElement("div");
+    p.textContent = texto;
+    if (tipo === "ok") p.style.color = "var(--accent)";
+    if (tipo === "error") p.style.color = "var(--danger)";
+    logTodas.appendChild(p);
+    logTodas.scrollTop = logTodas.scrollHeight;
+  }
+
+  document.getElementById("btnGenerarTodas").addEventListener("click", async () => {
+    const slug = document.getElementById("selectCursoGenerarTodas").value;
+    if (!slug) { alert("Selecciona un curso."); return; }
+    const cursoSnap = await getDoc(doc(db, "cursos", slug));
+    if (!cursoSnap.exists()) { alert("Curso no encontrado."); return; }
+    const curso = cursoSnap.data();
+    const sesiones = parsearListaSesiones(curso.lista_sesiones || "");
+    if (sesiones.length === 0) {
+      alert('No se encontró ninguna sesión en la lista. Revisa el formato "N | Tema" en la sección 1.');
+      return;
+    }
+    const regenerar = document.getElementById("regenerarExistentes").checked;
+    logTodas.innerHTML = "";
+    logTodas.style.display = "block";
+    logLinea(`Encontradas ${sesiones.length} sesiones en la lista. Empezando…`);
+
+    detenerLote = false;
+    const btnGenerarTodas = document.getElementById("btnGenerarTodas");
+    const btnDetener = document.getElementById("btnDetenerTodas");
+    btnGenerarTodas.disabled = true;
+    btnDetener.style.display = "inline-block";
+
+    let generadas = 0, saltadas = 0, fallidas = 0;
+    for (const s of sesiones) {
+      if (detenerLote) { logLinea("Detenido por el usuario.", "error"); break; }
+      const refSesion = doc(db, "cursos", slug, "sesiones", "sesion_" + s.numero);
+      if (!regenerar) {
+        const existe = await getDoc(refSesion);
+        if (existe.exists()) {
+          logLinea(`Sesión ${s.numero}: ya existe, se salta.`);
+          saltadas++;
+          continue;
+        }
+      }
+      logLinea(`Sesión ${s.numero}: generando…`);
+      try {
+        const prompt = construirPrompt(curso, s.numero, s.tema);
+        const markdown = await llamarGemini(prompt);
+        const fileIdExistente = null; // ya se filtró arriba si existía y no se quería regenerar
+        let fileIdFinal;
+        const existePointer = await getDoc(refSesion);
+        if (regenerar && existePointer.exists() && existePointer.data().drive_file_id) {
+          fileIdFinal = await guardarSesionEnDrive(slug, s.numero, markdown, existePointer.data().drive_file_id);
+        } else {
+          fileIdFinal = await guardarSesionEnDrive(slug, s.numero, markdown, fileIdExistente);
+        }
+        await setDoc(refSesion, {
+          drive_file_id: fileIdFinal,
+          drive_file_name: `${slug}_sesion_${s.numero}.md`,
+          tema: s.tema, fecha_generacion: new Date().toISOString()
+        });
+        logLinea(`Sesión ${s.numero}: ✓ generada.`, "ok");
+        generadas++;
+      } catch (err) {
+        logLinea(`Sesión ${s.numero}: ✗ error — ${err.message}`, "error");
+        fallidas++;
+      }
+      await new Promise(r => setTimeout(r, 4000)); // pausa entre llamadas para no saturar la API
+    }
+    logLinea(`Terminado. Generadas: ${generadas} — Saltadas: ${saltadas} — Con error: ${fallidas}.`);
+    btnGenerarTodas.disabled = false;
+    btnDetener.style.display = "none";
+  });
+
+  document.getElementById("btnDetenerTodas").addEventListener("click", () => {
+    detenerLote = true;
+  });
+
+  // ============ REPRODUCTOR ============
+  let slidesActuales = [];
+  let slideIdx = 0;
+  let progresoRef = null;
+  let cursoActivoSlug = "";
+  let sesionActivaNum = "";
+
+  document.getElementById("selectCursoJugar").addEventListener("change", async (e) => {
+    const slug = e.target.value;
+    const selectSesion = document.getElementById("selectSesionJugar");
+    if (!slug) { selectSesion.innerHTML = '<option value="">— Selecciona un curso primero —</option>'; return; }
+    const snap = await getDocs(collection(db, "cursos", slug, "sesiones"));
+    if (snap.empty) { selectSesion.innerHTML = '<option value="">Aún no hay sesiones generadas</option>'; return; }
+    selectSesion.innerHTML = '<option value="">— Selecciona una sesión —</option>';
+    const nums = [];
+    snap.forEach(d => nums.push(d.id.replace("sesion_", "")));
+    nums.sort((a,b) => Number(a) - Number(b));
+    nums.forEach(n => {
+      const opt = document.createElement("option");
+      opt.value = n; opt.textContent = "Sesión " + n;
+      selectSesion.appendChild(opt);
+    });
+  });
+
+  function construirSlides(contenido) {
+    const slides = [];
+    (contenido.diapositivas || []).forEach(d => slides.push({ tipo: "teoria", ...d }));
+    (contenido.problemas || []).forEach((p, i) => slides.push({ tipo: "problema", numero: i + 1, ...p }));
+    (contenido.codigo || []).forEach((c, i) => slides.push({ tipo: "codigo", numero: i + 1, ...c }));
+    if (contenido.examen) {
+      slides.push({ tipo: "examen", preguntas: contenido.examen.preguntas, tiempo: contenido.examen.tiempo_estimado_min });
+      slides.push({ tipo: "clave", preguntas: contenido.examen.preguntas });
+    }
+    return slides;
+  }
+
+  document.getElementById("btnCargarSesion").addEventListener("click", async () => {
+    const msg = document.getElementById("msgReproductor");
+    const slug = document.getElementById("selectCursoJugar").value;
+    const num = document.getElementById("selectSesionJugar").value;
+    if (!slug || !num) { msg.textContent = "Selecciona curso y sesión."; msg.className = "msg error"; return; }
+    msg.textContent = "Cargando…"; msg.className = "msg";
+    try {
+      const snap = await getDoc(doc(db, "cursos", slug, "sesiones", "sesion_" + num));
+      if (!snap.exists()) throw new Error("Sesión no encontrada.");
+      const fileId = snap.data().drive_file_id;
+      if (!fileId) throw new Error("Esta sesión no tiene un archivo de Drive asociado (fue generada con una versión anterior de la app).");
+      const markdown = await leerArchivoDrive(fileId);
+      const contenido = parsearMarkdown(markdown);
+      slidesActuales = construirSlides(contenido);
+      cursoActivoSlug = slug; sesionActivaNum = num;
+      progresoRef = doc(db, "progreso", `${slug}_sesion_${num}`);
+      const progSnap = await getDoc(progresoRef);
+      slideIdx = progSnap.exists() ? Math.min(progSnap.data().diapositiva_actual || 0, slidesActuales.length - 1) : 0;
+      document.getElementById("viewer").style.display = "block";
+      msg.textContent = progSnap.exists() ? `Retomando desde donde quedaste (${new Date(progSnap.data().fecha_actualizacion).toLocaleString()}).` : "";
+      msg.className = "msg ok";
+      renderSlide();
+    } catch (err) {
+      msg.textContent = "Error: " + err.message; msg.className = "msg error";
+    }
+  });
+
+  function renderSlide() {
+    const s = slidesActuales[slideIdx];
+    const kicker = document.getElementById("slideKicker");
+    const title = document.getElementById("slideTitle");
+    const body = document.getElementById("slideBody");
+    const svgBox = document.getElementById("slideSvg");
+    svgBox.innerHTML = "";
+    if (s.tipo === "teoria") {
+      kicker.textContent = "Teoría";
+      title.textContent = s.titulo;
+      body.textContent = s.contenido;
+      if (s.svg) svgBox.innerHTML = s.svg;
+    } else if (s.tipo === "problema") {
+      kicker.textContent = "Problema " + s.numero;
+      title.textContent = "Enunciado";
+      body.textContent = s.enunciado + "\n\n— Solución —\n" + s.solucion;
+    } else if (s.tipo === "codigo") {
+      kicker.textContent = "Código " + s.numero;
+      title.textContent = s.problema_ref || "";
+      body.innerHTML = "";
+      const pre = document.createElement("pre");
+      pre.style.whiteSpace = "pre-wrap"; pre.style.fontFamily = "ui-monospace, monospace"; pre.style.fontSize = "0.82rem";
+      pre.textContent = s.codigo;
+      body.appendChild(pre);
+    } else if (s.tipo === "examen") {
+      kicker.textContent = "Examen de práctica";
+      title.textContent = `Tiempo estimado: ${s.tiempo || "?"} min`;
+      body.textContent = s.preguntas.map((p, i) => `${i + 1}. ${p.pregunta}`).join("\n\n");
+    } else if (s.tipo === "clave") {
+      kicker.textContent = "Clave de respuestas";
+      title.textContent = "";
+      body.textContent = s.preguntas.map((p, i) => `${i + 1}. ${p.respuesta}`).join("\n\n");
+    }
+    document.getElementById("progressFill").style.width = `${((slideIdx + 1) / slidesActuales.length) * 100}%`;
+    document.getElementById("btnAnterior").disabled = slideIdx === 0;
+    document.getElementById("btnSiguiente").textContent = slideIdx === slidesActuales.length - 1 ? "Finalizar ✓" : "Siguiente →";
+    if (window.MathJax) MathJax.typesetPromise([body]).catch(() => {});
+    guardarProgreso();
+  }
+
+  async function guardarProgreso() {
+    const status = document.getElementById("statusSave");
+    status.textContent = "Guardando…";
+    try {
+      await setDoc(progresoRef, {
+        curso: cursoActivoSlug, sesion: sesionActivaNum,
+        diapositiva_actual: slideIdx, total_diapositivas: slidesActuales.length,
+        completado: slideIdx === slidesActuales.length - 1,
+        fecha_actualizacion: new Date().toISOString()
+      }, { merge: true });
+      status.textContent = "Guardado ✓";
+    } catch {
+      status.textContent = "No se pudo guardar (revisa tu conexión).";
+    }
+  }
+
+  document.getElementById("btnAnterior").addEventListener("click", () => {
+    if (slideIdx > 0) { slideIdx--; renderSlide(); }
+  });
+  document.getElementById("btnSiguiente").addEventListener("click", () => {
+    if (slideIdx < slidesActuales.length - 1) { slideIdx++; renderSlide(); }
+  });
+  document.getElementById("btnReiniciar").addEventListener("click", async () => {
+    if (!confirm("¿Reiniciar el progreso de esta sesión?")) return;
+    await deleteDoc(progresoRef);
+    slideIdx = 0;
+    renderSlide();
+  });
+</script>
+</body>
+</html>
