@@ -2,6 +2,38 @@
 // PLANTILLAS DE TEXTO PARA LA IA
 // ==========================================
 
+// ==========================================
+// PLANTILLAS DE TEXTO PARA LA IA
+// ==========================================
+
+// Ángulos sugeridos para desarrollar un tópico en profundidad, según cuántas
+// diapositivas le corresponden. Sirve para que la IA no "rellene" el número
+// pedido fragmentando una explicación corta en piezas triviales.
+function angulosPorCantidad(cantidad) {
+  const todos = [
+    "Definición y contexto general del tópico",
+    "Fundamento teórico/matemático (fórmulas clave y qué representa cada término)",
+    "Interpretación física / qué significa esto en la práctica",
+    "Primer ejemplo resuelto que ilustre el concepto",
+    "Casos particulares, límites o excepciones a tener en cuenta",
+    "Segundo ejemplo resuelto, algo más complejo que el primero",
+    "Relación con otros conceptos de la sesión / síntesis integradora"
+  ];
+  return todos.slice(0, cantidad).map((a, i) => `${i + 1}. ${a}`).join("\n");
+}
+
+function guardrailAntiFragmentacion(cantidad) {
+  return `IMPORTANTE — no fragmentes el tema en piezas triviales: cada una de las
+${cantidad} diapositivas de un mismo tópico debe tener contenido sustancial y
+autocontenido de AL MENOS 70 palabras, cubriendo un ángulo distinto y completo
+del tópico (nunca una sola oración suelta para "rellenar" el número pedido). Usa
+esta estructura sugerida para las ${cantidad} diapositivas de cada tópico:
+${angulosPorCantidad(cantidad)}
+Si el tópico es demasiado simple para sostener este nivel de profundidad en todas,
+profundiza igual con ejemplos adicionales, contexto, unidades, casos límite o
+comparaciones — nunca reduzcas una diapositiva a una frase para cumplir el número.`;
+}
+
 export function construirPrompt(curso, numSesion, tema, modo = "largo") {
   const porTopico = { corto: 3, largo: 5, extenso: 7 }[modo] || 5;
   const extraEjemplos = modo === "extenso"
@@ -31,6 +63,8 @@ que lo desarrollen en profundidad — ni una menos ni una más.${extraEjemplos} 
 diapositivas de un mismo tópico deben llevar el MISMO nombre de tópico entre
 corchetes en su título, así: "## Diapositiva N: [Nombre del tópico] Subtítulo
 específico de esa diapositiva dentro del tópico".
+
+${guardrailAntiFragmentacion(porTopico)}
 
 Devuelve EXCLUSIVAMENTE Markdown válido con esta estructura EXACTA de encabezados
 (nada de texto antes del primer encabezado ni después del último; las fórmulas LaTeX
@@ -102,6 +136,8 @@ Tema general de la sesión: """${tema}"""
 Tópico específico a desarrollar: "${tituloTopico}"
 Idioma: ${curso.idioma}. Notación especial: ${curso.notacion_especial}.
 Genera EXACTAMENTE ${cantidad} diapositivas que desarrollen este tópico — ni una menos ni una más.${extra}
+
+${guardrailAntiFragmentacion(cantidad)}
 
 Devuelve EXCLUSIVAMENTE Markdown con esta estructura, repetida EXACTAMENTE ${cantidad}
 veces (fórmulas LaTeX con $...$ y backslash normal, sin escapar nada):

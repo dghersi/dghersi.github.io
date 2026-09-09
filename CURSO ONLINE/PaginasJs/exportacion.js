@@ -89,6 +89,16 @@ async function descargarMarkdown() {
   }
 }
 
+// Quita bloques de imagen/SVG en base64 y metadata interna antes de mandar el
+// contenido a una herramienta externa — esas herramientas deben decidir sus
+// propias imágenes, no recibir las nuestras (y son gigantes en base64).
+function limpiarMarkdownParaPrompt(markdown) {
+  let limpio = markdown.replace(/<!--\s*gen:[^>]*-->\n?/gi, "");
+  limpio = limpio.replace(/```imagen\s*[\s\S]*?```/gi, "*(sugerencia: incluye aquí una imagen o diagrama ilustrativo)*");
+  limpio = limpio.replace(/```svg\s*[\s\S]*?```/gi, "*(sugerencia: incluye aquí un diagrama ilustrativo)*");
+  return limpio;
+}
+
 // ---------- Prompt para herramientas de diapositivas (Gamma, Kimi, Claude, Gemini) ----------
 async function generarPromptDiapositivas() {
   const slug = document.getElementById("selectCursoExportar").value;
@@ -96,11 +106,12 @@ async function generarPromptDiapositivas() {
   mostrarEstadoFooter("Preparando prompt…");
   try {
     const { curso, markdown } = await recopilarMarkdown(slug);
+    const markdownLimpio = limpiarMarkdownParaPrompt(markdown);
     const prompt = `Convierte el siguiente contenido de curso en una presentación de diapositivas visualmente atractiva y clara.
 
 Instrucciones:
 - Una diapositiva por concepto o subtema clave (no metas todo el contenido de un tópico en una sola diapositiva).
-- Incluye imágenes, iconos o diagramas ilustrativos donde ayuden a entender el concepto.
+- Donde el texto sugiera una imagen o diagrama, elige tú la imagen/ilustración que mejor represente ese concepto — el contenido no trae imágenes propias, decide libremente el estilo visual.
 - Mantén las fórmulas matemáticas en formato legible (usa notación matemática real, no texto plano).
 - Para los problemas, dedica una diapositiva al enunciado y otra(s) a la solución paso a paso.
 - Diseño limpio, profesional, con buen contraste de color.
@@ -110,7 +121,7 @@ Curso: ${curso.nombre_curso || slug}
 
 Contenido completo:
 """
-${markdown}
+${markdownLimpio}
 """`;
     document.getElementById("resultadoPrompt").value = prompt;
     document.getElementById("bloqueResultadoPrompt").style.display = "block";

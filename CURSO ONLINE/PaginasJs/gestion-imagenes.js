@@ -112,8 +112,14 @@ function crearFilaImagen(etiqueta, objetivo, contexto) {
 
   const preview = document.createElement("div");
   preview.className = "fila-imagen-preview";
-  if (objetivo.imagen) mostrarImagenConZoom(preview, objetivo.imagen);
-  else preview.textContent = "Sin imagen";
+  preview.tabIndex = 0;
+  if (objetivo.imagen) {
+    mostrarImagenConZoom(preview, objetivo.imagen);
+  } else {
+    preview.textContent = "Sin imagen — clic aquí y Ctrl+V";
+    preview.classList.add("fila-imagen-preview-vacia");
+  }
+  preview.addEventListener("paste", (e) => manejarPegadoImagen(e, objetivo));
   fila.appendChild(preview);
 
   const acciones = document.createElement("div");
@@ -181,4 +187,47 @@ async function quitarImagenGestion(objetivo) {
     mostrarEstadoFooter("Error al quitar imagen");
   }
   renderListaImagenes();
+}
+
+// ---------- Pegar imagen (Ctrl+V) — desde el portapapeles como archivo o como URL ----------
+function convertirArchivoADataUrl(archivo) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen pegada."));
+    reader.readAsDataURL(archivo);
+  });
+}
+
+async function manejarPegadoImagen(e, objetivo) {
+  const items = e.clipboardData?.items;
+  let archivoImagen = null;
+  if (items) {
+    for (const item of items) {
+      if (item.type.startsWith("image/")) { archivoImagen = item.getAsFile(); break; }
+    }
+  }
+  e.preventDefault();
+  try {
+    let nuevaImagen;
+    if (archivoImagen) {
+      mostrarEstadoFooter("Pegando imagen…");
+      nuevaImagen = await convertirArchivoADataUrl(archivoImagen);
+    } else {
+      const texto = (e.clipboardData?.getData("text/plain") || "").trim();
+      if (/^https?:\/\//i.test(texto)) {
+        nuevaImagen = texto;
+      } else {
+        mostrarEstadoFooter("El portapapeles no tiene una imagen ni una URL válida");
+        return;
+      }
+    }
+    objetivo.imagen = nuevaImagen;
+    await guardarContenidoActivo();
+    mostrarEstadoFooter("Imagen pegada y guardada");
+    renderListaImagenes();
+  } catch (err) {
+    alert("Error al pegar imagen: " + err.message);
+    mostrarEstadoFooter("Error al pegar imagen");
+  }
 }

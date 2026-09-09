@@ -65,6 +65,12 @@ legend { padding:0 .5rem; color:var(--muted); font-size:.85rem; }
 }
 .fila-imagen-preview { width: 140px; }
 .fila-imagen-preview img { width: 140px; height: auto; border-radius: 6px; }
+.fila-imagen-preview-vacia {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font-size: .7rem; color: var(--muted); border: 1px dashed var(--border);
+  border-radius: 6px; height: 90px; padding: .5rem; cursor: text; outline: none;
+}
+.fila-imagen-preview-vacia:focus { border-color: var(--accent); color: var(--accent); }
 .fila-imagen-acciones { display: flex; gap: .4rem; white-space: nowrap; }
 .fila-imagen-acciones button { margin-top: 0; }
 
