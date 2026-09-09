@@ -2,7 +2,7 @@ import { db, doc, setDoc, getDoc, getDocs, deleteDoc, collection, poblarSelectCu
 import { leerArchivoDrive, guardarSesionEnDrive } from "../SetupJs/drive.js";
 import { llamarIA, obtenerUltimoProveedor } from "../SetupJs/ia-cliente.js";
 import { parsearMarkdown, parsearCorrecciones, parsearExamenSolo, parsearDiapositivasSolo, reconstruirMarkdown } from "../FuncionesJs/parsers.js";
-import { construirPromptCorreccion, construirPromptExamenNuevo, construirPromptDiapositivas } from "../FuncionesJs/prompts.js";
+import { construirPromptCorreccion, construirPromptExamenNuevo, construirPromptTopico } from "../FuncionesJs/prompts.js";
 import { formatearTexto } from "../FuncionesJs/formato.js";
 import { mostrarEstadoFooter } from "./estado.js";
 
@@ -160,11 +160,11 @@ function renderTeoria(s, kicker, title, body, svgBox) {
   title.textContent = s.titulo;
   body.innerHTML = formatearTexto(s.contenido);
   if (s.svg) svgBox.innerHTML = s.svg;
-  renderIndicadoresDiapositiva();
+  renderIndicadoresDiapositiva(s);
 }
 
-// ---------- Indicadores de generación (Modelo/Modo) — solo en diapositivas de teoría ----------
-function renderIndicadoresDiapositiva() {
+// ---------- Indicadores de generación (Modelo/Modo) — por diapositiva/tópico ----------
+function renderIndicadoresDiapositiva(s) {
   const viewer = document.getElementById("viewer");
   const cont = document.createElement("div");
   cont.className = "slide-indicadores";
@@ -185,52 +185,54 @@ function renderIndicadoresDiapositiva() {
         <option value="extenso">Extenso (6-8)</option>
       </select>
     </label>
-    <button class="secondary" id="btnRegenerarTeoria" style="margin-top:0; padding:.15rem .5rem; font-size:.68rem;">Regenerar</button>
+    <button class="secondary" id="btnRegenerarTeoria" style="margin-top:0; padding:.15rem .5rem; font-size:.68rem;">Regenerar tópico</button>
   `;
   viewer.appendChild(cont);
-  document.getElementById("selectModeloSlide").value = modeloUsadoActivo || "Auto";
-  document.getElementById("selectModoSlide").value = modoGeneradoActivo || "largo";
+  document.getElementById("selectModeloSlide").value = s.modelo || modeloUsadoActivo || "Auto";
+  document.getElementById("selectModoSlide").value = s.modo || modoGeneradoActivo || "largo";
   document.getElementById("btnRegenerarTeoria").addEventListener("click", () => {
     const modelo = document.getElementById("selectModeloSlide").value;
     const modo = document.getElementById("selectModoSlide").value;
-    regenerarTeoriaSesion(modelo, modo);
+    regenerarTopico(modelo, modo);
   });
 }
 
-// Regenera TODO el bloque de diapositivas de teoría de la sesión (no solo la
-// actual), reconstruye el Markdown completo y lo sube a Drive.
-async function regenerarTeoriaSesion(modeloElegido, modoElegido) {
+// Desarrolla en profundidad SOLO el tópico de la diapositiva actual, expandiéndolo
+// a 1-8 diapositivas nuevas (reemplaza solo esa posición, el resto de topics y
+// el resto de la sesión no se tocan), reconstruye el Markdown completo y lo sube a Drive.
+async function regenerarTopico(modeloElegido, modoElegido) {
+  const idxActual = slideIdx;
+  const slideActual = slidesActuales[idxActual];
+  if (!slideActual || slideActual.tipo !== "teoria") return;
   const cont = document.getElementById("slideIndicadores");
   if (cont) cont.style.opacity = ".5";
-  mostrarEstadoFooter(`Regenerando teoría (${modoElegido})…`);
+  mostrarEstadoFooter(`Regenerando tópico "${slideActual.titulo}" (${modoElegido})…`);
   try {
-    const prompt = construirPromptDiapositivas(cursoActivo, temaActivo, modoElegido);
+    const prompt = construirPromptTopico(cursoActivo, temaActivo, slideActual.titulo, modoElegido);
     const proveedorForzado = modeloElegido && modeloElegido !== "Auto" ? modeloElegido : undefined;
     const texto = await llamarIA(prompt, null, proveedorForzado);
-    const nuevasDiapositivas = parsearDiapositivasSolo(texto);
+    const nuevasDelTopico = parsearDiapositivasSolo(texto);
+    const modeloReal = obtenerUltimoProveedor() || modeloElegido || "Auto";
+    const nuevasConMeta = nuevasDelTopico.map(d => ({ tipo: "teoria", ...d, modelo: modeloReal, modo: modoElegido }));
 
+    // Reemplaza SOLO esa diapositiva (ese tópico) por las nuevas, en su misma posición
+    slidesActuales.splice(idxActual, 1, ...nuevasConMeta);
+
+    // Reconstruye el Markdown completo con toda la teoría actual (topics viejos + nuevos) + el resto
+    const todasLasDiapositivas = slidesActuales
+      .filter(sl => sl.tipo === "teoria")
+      .map(sl => ({ titulo: sl.titulo, contenido: sl.contenido, svg: sl.svg, modelo: sl.modelo, modo: sl.modo }));
     const resto = extraerRestoDelContenido();
-    const contenidoCompleto = { diapositivas: nuevasDiapositivas, ...resto };
-    slidesActuales = construirSlides(contenidoCompleto);
-
+    const contenidoCompleto = { diapositivas: todasLasDiapositivas, ...resto };
     const markdownNuevo = reconstruirMarkdown(contenidoCompleto);
     driveFileIdActivo = await guardarSesionEnDrive(cursoActivoSlug, sesionActivaNum, markdownNuevo, driveFileIdActivo);
 
-    modeloUsadoActivo = obtenerUltimoProveedor() || modeloElegido || "Auto";
-    modoGeneradoActivo = modoElegido;
-    const refSesion = doc(db, "cursos", cursoActivoSlug, "sesiones", "sesion_" + sesionActivaNum);
-    await setDoc(refSesion, {
-      modelo_usado: modeloUsadoActivo,
-      modo_generado: modoGeneradoActivo,
-      fecha_generacion: new Date().toISOString()
-    }, { merge: true });
-
-    slideIdx = 0;
-    mostrarEstadoFooter("Teoría regenerada y guardada en Drive");
+    slideIdx = idxActual;
+    mostrarEstadoFooter("Tópico regenerado y guardado en Drive");
     renderSlide();
   } catch (err) {
-    alert("Error al regenerar la teoría: " + err.message);
-    mostrarEstadoFooter("Error al regenerar teoría");
+    alert("Error al regenerar el tópico: " + err.message);
+    mostrarEstadoFooter("Error al regenerar tópico");
     if (cont) cont.style.opacity = "1";
   }
 }

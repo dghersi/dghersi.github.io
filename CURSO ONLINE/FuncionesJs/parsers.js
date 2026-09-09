@@ -27,13 +27,18 @@ export function parsearMarkdown(texto) {
 
     if (/^Diapositiva/i.test(header)) {
       const titulo = header.replace(/^Diapositiva\s*\d*:?\s*/i, "").trim();
-      let contenido = cuerpo, svg = "";
-      const svgMatch = cuerpo.match(/```svg\s*([\s\S]*?)```/i);
+      let contenido = cuerpo, svg = "", modelo, modo;
+      const metaMatch = contenido.match(/^<!--\s*gen:\s*modelo=(\S+)\s+modo=(\S+)\s*-->\n?/i);
+      if (metaMatch) {
+        modelo = metaMatch[1]; modo = metaMatch[2];
+        contenido = contenido.replace(metaMatch[0], "");
+      }
+      const svgMatch = contenido.match(/```svg\s*([\s\S]*?)```/i);
       if (svgMatch) {
         svg = svgMatch[1].trim();
-        contenido = cuerpo.replace(svgMatch[0], "").trim();
+        contenido = contenido.replace(svgMatch[0], "").trim();
       }
-      diapositivas.push({ titulo, contenido: contenido.trim(), svg });
+      diapositivas.push({ titulo, contenido: contenido.trim(), svg, ...(modelo && { modelo, modo }) });
     } else if (/^Problema/i.test(header)) {
       let svg = "";
       let cuerpoLimpio = cuerpo;
@@ -96,8 +101,9 @@ export function parsearExamenSolo(texto) {
   };
 }
 
-// Parsea el resultado de regenerar el bloque COMPLETO de diapositivas de teoría
-// (una o más "## Diapositiva N: título" seguidas). Usado por el badge Modelo/Modo.
+// Parsea el resultado de desarrollar UN tópico puntual (una o más
+// "## Diapositiva N: título" seguidas, todas sobre ese tópico). La metadata de
+// modelo/modo se agrega después en el código, no la genera la IA.
 export function parsearDiapositivasSolo(texto) {
   const diapositivas = [];
   const secciones = texto.split(/\n(?=##\s)/);
@@ -129,7 +135,9 @@ export function reconstruirMarkdown(contenido) {
   const partes = [];
   (contenido.diapositivas || []).forEach((d, i) => {
     partes.push(
-      `## Diapositiva ${i + 1}: ${d.titulo}\n${d.contenido}` +
+      `## Diapositiva ${i + 1}: ${d.titulo}\n` +
+      (d.modelo && d.modo ? `<!-- gen: modelo=${d.modelo} modo=${d.modo} -->\n` : "") +
+      `${d.contenido}` +
       (d.svg ? `\n\n\`\`\`svg\n${d.svg}\n\`\`\`` : "")
     );
   });

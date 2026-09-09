@@ -78,31 +78,33 @@ sección si el software es NINGUNO)
 (mismo número y orden que las preguntas del examen)`;
 }
 
-// Regenera SOLO el bloque de diapositivas de teoría de una sesión ya generada
-// (problemas, código y examen no se tocan). Usado por el badge "Modelo/Modo" del reproductor.
-export function construirPromptDiapositivas(curso, tema, modo = "largo") {
+// Desarrolla en profundidad UN topico puntual (una diapositiva) de una sesión ya
+// generada, expandiéndolo a 1-8 diapositivas nuevas según el modo. El resto de
+// la sesión no se toca. Usado por el badge "Modelo/Modo" del reproductor.
+export function construirPromptTopico(curso, tema, tituloTopico, modo = "largo") {
   const config = {
     corto: { rango: "entre 1 y 2", extra: "" },
     largo: { rango: "entre 3 y 5", extra: "" },
-    extenso: { rango: "entre 6 y 8", extra: " Incluye al menos un ejemplo concreto dentro del contenido de cada diapositiva." }
+    extenso: { rango: "entre 6 y 8", extra: " Incorpora ejemplos concretos resueltos dentro de estas diapositivas." }
   }[modo] || { rango: "entre 3 y 5", extra: "" };
 
-  return `Eres ${curso.rol_experto}. Vas a regenerar SOLO el bloque de diapositivas de teoría de una sesión ya generada (los problemas, el código y el examen de esa sesión NO cambian — no los menciones ni los repitas).
+  return `Eres ${curso.rol_experto}. Vas a desarrollar EN PROFUNDIDAD un solo tópico dentro de una sesión de un curso — no toda la sesión, solo este tópico puntual. El resto de los tópicos, los problemas, el código y el examen de esa sesión NO cambian — no los menciones ni los repitas.
 
-Tema de la sesión: """${tema}"""
+Tema general de la sesión: """${tema}"""
+Tópico específico a desarrollar: "${tituloTopico}"
 Idioma: ${curso.idioma}. Notación especial: ${curso.notacion_especial}.
-Cantidad de diapositivas pedida: ${config.rango}.${config.extra}
+Cantidad de diapositivas pedida para desarrollar SOLO este tópico: ${config.rango}.${config.extra}
 
-Devuelve EXCLUSIVAMENTE Markdown con esta estructura, repetida tantas veces como diapositivas (fórmulas LaTeX con $...$ y backslash normal, sin escapar nada):
+Devuelve EXCLUSIVAMENTE Markdown con esta estructura, repetida tantas veces como diapositivas necesites para desarrollar el tópico (fórmulas LaTeX con $...$ y backslash normal, sin escapar nada):
 
-## Diapositiva 1: (título)
-(explicación clara del concepto)
+## Diapositiva 1: (título relacionado con "${tituloTopico}")
+(contenido)
 
 \`\`\`svg
-(código <svg>...</svg> simple si ayuda a entender; omite este bloque si no hace falta)
+(opcional, código <svg>...</svg> si ayuda a entender; omite este bloque si no hace falta)
 \`\`\`
 
-(repite "## Diapositiva N: título" hasta completar ${config.rango} diapositivas en total)`;
+(repite "## Diapositiva N: título" hasta completar ${config.rango} diapositivas en total, todas desarrollando el tópico "${tituloTopico}")`;
 }
 
 export function construirPromptCorreccion(preguntas, respuestasAlumno) {
