@@ -67,7 +67,8 @@ function initClavesIA() {
   });
 
   const camposImagen = {
-    geminiModeloImagen: "gemini_modelo_imagen"
+    geminiModeloImagen: "gemini_modelo_imagen",
+    cfWorkerUrl: "cf_worker_url"
   };
   Object.entries(camposImagen).forEach(([id, key]) => {
     document.getElementById(id).value = localStorage.getItem(key) || document.getElementById(id).value;

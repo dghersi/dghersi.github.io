@@ -42,6 +42,25 @@ async function generarImagenPollinations(prompt) {
   return url;
 }
 
+// Llama al Worker propio de Cloudflare (desplegado por el usuario) — el Worker
+// corre server-side y agrega headers CORS, así se evita el bloqueo que sí ocurre
+// al llamar la API de Cloudflare directo desde el navegador.
+async function generarImagenCloudflareWorker(workerUrl, prompt) {
+  const res = await fetch(workerUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+  if (!res.ok) {
+    const err = new Error(`(${res.status}) ${(await res.text()).slice(0, 200)}`);
+    err.status = res.status;
+    throw err;
+  }
+  const data = await res.json();
+  if (!data.image) throw new Error(data.error || "El Worker no devolvió una imagen.");
+  return `data:image/png;base64,${data.image}`;
+}
+
 // ==========================================
 // DATOS — proveedores de imagen, en orden de respaldo
 // ==========================================
@@ -54,6 +73,11 @@ const PROVEEDORES_IMAGEN = [
       localStorage.getItem("gemini_modelo_imagen") || "gemini-2.5-flash-image",
       prompt
     )
+  },
+  {
+    nombre: "Cloudflare",
+    disponible: () => !!localStorage.getItem("cf_worker_url"),
+    generar: (prompt) => generarImagenCloudflareWorker(localStorage.getItem("cf_worker_url"), prompt)
   },
   {
     nombre: "Pollinations",

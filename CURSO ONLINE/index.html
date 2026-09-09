@@ -91,8 +91,13 @@
         <label>Modelo de imagen</label>
         <input id="geminiModeloImagen" value="gemini-2.5-flash-image" />
 
-        <label style="margin-top:1.5rem"><strong>2) Pollinations (respaldo)</strong></label>
-        <p class="hint">No necesita API key ni configuración — funciona directo desde el navegador, sin bloqueos de CORS. Se usa automáticamente si Gemini falla.</p>
+        <label style="margin-top:1.5rem"><strong>2) Cloudflare (tu Worker propio)</strong></label>
+        <p class="hint">Mejor calidad que Pollinations, gratis, sin bloqueo CORS. Requiere desplegar un Worker una vez (te pasé el código aparte).</p>
+        <label>URL del Worker</label>
+        <input id="cfWorkerUrl" placeholder="https://tu-worker.tu-usuario.workers.dev" />
+
+        <label style="margin-top:1.5rem"><strong>3) Pollinations (último respaldo)</strong></label>
+        <p class="hint">No necesita API key ni configuración — funciona directo desde el navegador. Se usa solo si los dos anteriores fallan.</p>
 
         <button class="secondary" id="btnGuardarClavesImagen">Guardar configuración de imágenes</button>
         <p class="msg" id="msgImagenes"></p>
@@ -214,6 +219,7 @@
         <div class="slide-kicker" id="slideKicker"></div>
         <div class="slide-title" id="slideTitle"></div>
         <div class="slide-svg" id="slideSvg"></div>
+      <div class="slide-imagen" id="slideImagen"></div>
         <div class="slide-body" id="slideBody"></div>
         <div class="nav-row">
           <button class="icon" id="btnAnterior">← Anterior</button>
