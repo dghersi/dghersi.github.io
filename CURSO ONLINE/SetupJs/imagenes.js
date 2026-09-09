@@ -36,8 +36,15 @@ function verificarImagenCarga(url, timeoutMs = 20000) {
   });
 }
 
+// encodeURIComponent no codifica ( ) por defecto — si el prompt los trae (ej. un
+// título con paréntesis) el paréntesis queda literal en la URL, lo que rompe el
+// patrón que usamos para reconocer imágenes en Markdown. Los codificamos a mano.
+function encodeURIComponentEstricto(str) {
+  return encodeURIComponent(str).replace(/\(/g, "%28").replace(/\)/g, "%29");
+}
+
 async function generarImagenPollinations(prompt) {
-  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=512&model=flux&nologo=true`;
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponentEstricto(prompt)}?width=768&height=512&model=flux&nologo=true`;
   await verificarImagenCarga(url);
   return url;
 }

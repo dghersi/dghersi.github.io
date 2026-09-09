@@ -121,7 +121,7 @@ function construirSlides(contenido) {
 
 // Reconstruye {problemas, codigo, examen} a partir del estado actual en memoria.
 function extraerRestoDelContenido() {
-  const problemas = slidesActuales.filter(s => s.tipo === "problema").map(s => ({ enunciado: s.enunciado, solucion: s.solucion, svg: s.svg }));
+  const problemas = slidesActuales.filter(s => s.tipo === "problema").map(s => ({ enunciado: s.enunciado, solucion: s.solucion, svg: s.svg, imagen: s.imagen }));
   const codigo = slidesActuales.filter(s => s.tipo === "codigo").map(s => ({ problema_ref: s.problema_ref, codigo: s.codigo }));
   const examenSlide = slidesActuales.find(s => s.tipo === "examen");
   const examen = examenSlide ? { preguntas: examenSlide.preguntas, tiempo_estimado_min: examenSlide.tiempo } : null;
@@ -177,7 +177,7 @@ async function regenerarTopico(topico, modeloElegido, modoElegido) {
 
     const todasLasDiapositivas = slidesActuales
       .filter(sl => sl.tipo === "teoria")
-      .map(sl => ({ titulo: sl.titulo, topico: sl.topico, contenido: sl.contenido, svg: sl.svg, modelo: sl.modelo, modo: sl.modo }));
+      .map(sl => ({ titulo: sl.titulo, topico: sl.topico, contenido: sl.contenido, svg: sl.svg, imagen: sl.imagen, modelo: sl.modelo, modo: sl.modo }));
     const resto = extraerRestoDelContenido();
     const contenidoCompleto = { diapositivas: todasLasDiapositivas, ...resto };
     const markdownNuevo = reconstruirMarkdown(contenidoCompleto);
@@ -204,10 +204,12 @@ function renderSlide() {
   const title = document.getElementById("slideTitle");
   const body = document.getElementById("slideBody");
   const svgBox = document.getElementById("slideSvg");
+  const imgBox = document.getElementById("slideImagen");
   svgBox.innerHTML = "";
+  imgBox.innerHTML = "";
 
-  if (s.tipo === "teoria") renderTeoria(s, kicker, title, body, svgBox);
-  else if (s.tipo === "problema") renderProblema(s, kicker, title, body, svgBox);
+  if (s.tipo === "teoria") renderTeoria(s, kicker, title, body, svgBox, imgBox);
+  else if (s.tipo === "problema") renderProblema(s, kicker, title, body, svgBox, imgBox);
   else if (s.tipo === "codigo") renderCodigo(s, kicker, title, body);
   else if (s.tipo === "examen") renderExamen(s, kicker, title, body);
   else if (s.tipo === "clave") renderClave(s, kicker, title, body);
@@ -220,33 +222,60 @@ function renderSlide() {
 }
 
 // ---------- Funciones de renderizado, una por tipo de diapositiva ----------
-function renderTeoria(s, kicker, title, body, svgBox) {
+function renderTeoria(s, kicker, title, body, svgBox, imgBox) {
   kicker.textContent = "Teoría" + (s.topico ? ` · ${s.topico}` : "");
   title.textContent = s.titulo;
   body.innerHTML = formatearTexto(s.contenido);
   if (s.svg) svgBox.innerHTML = s.svg;
-  agregarBotonImagen(body, s, "contenido", s.titulo);
+  renderControlesImagen(imgBox, s, s.titulo);
 }
 
-function renderProblema(s, kicker, title, body, svgBox) {
+function renderProblema(s, kicker, title, body, svgBox, imgBox) {
   kicker.textContent = "Problema " + s.numero;
   title.textContent = "Enunciado";
   body.innerHTML = formatearTexto(s.enunciado) + "<br><br><strong>— Solución —</strong><br>" + formatearTexto(s.solucion);
   if (s.svg) svgBox.innerHTML = s.svg;
-  agregarBotonImagen(body, s, "enunciado", s.enunciado.slice(0, 120));
+  renderControlesImagen(imgBox, s, s.enunciado.slice(0, 120));
 }
 
 // ---------- Generación de imágenes para una diapositiva/problema ----------
-function agregarBotonImagen(body, slideObj, campo, contexto) {
-  const btn = document.createElement("button");
-  btn.className = "secondary";
-  btn.textContent = "🖼️ Generar imagen";
-  btn.style.marginTop = "1rem";
-  btn.addEventListener("click", () => generarImagenSlide(btn, slideObj, campo, contexto));
-  body.appendChild(btn);
+// La imagen se guarda en su propio campo (slideObj.imagen), separado del texto,
+// para poder reemplazarla o quitarla sin tocar el contenido ni acumular copias.
+function renderControlesImagen(imgBox, slideObj, contexto) {
+  if (slideObj.imagen) {
+    const img = document.createElement("img");
+    img.src = slideObj.imagen;
+    img.style.cssText = "max-width:100%;border-radius:6px;display:block;margin-bottom:.5rem;";
+    imgBox.appendChild(img);
+  }
+
+  const btnGenerar = document.createElement("button");
+  btnGenerar.className = "secondary";
+  btnGenerar.textContent = slideObj.imagen ? "🔄 Regenerar imagen" : "🖼️ Generar imagen";
+  btnGenerar.addEventListener("click", () => generarImagenSlide(btnGenerar, slideObj, contexto));
+  imgBox.appendChild(btnGenerar);
+
+  if (slideObj.imagen) {
+    const btnQuitar = document.createElement("button");
+    btnQuitar.className = "secondary";
+    btnQuitar.textContent = "🗑️ Quitar imagen";
+    btnQuitar.style.marginLeft = ".5rem";
+    btnQuitar.addEventListener("click", () => quitarImagenSlide(slideObj));
+    imgBox.appendChild(btnQuitar);
+  }
 }
 
-async function generarImagenSlide(boton, slideObj, campo, contexto) {
+async function guardarCambiosDeContenido() {
+  const todasLasDiapositivas = slidesActuales
+    .filter(sl => sl.tipo === "teoria")
+    .map(sl => ({ titulo: sl.titulo, topico: sl.topico, contenido: sl.contenido, svg: sl.svg, imagen: sl.imagen, modelo: sl.modelo, modo: sl.modo }));
+  const resto = extraerRestoDelContenido();
+  const contenidoCompleto = { diapositivas: todasLasDiapositivas, ...resto };
+  const markdownNuevo = reconstruirMarkdown(contenidoCompleto);
+  driveFileIdActivo = await guardarSesionEnDrive(cursoActivoSlug, sesionActivaNum, markdownNuevo, driveFileIdActivo);
+}
+
+async function generarImagenSlide(boton, slideObj, contexto) {
   boton.disabled = true;
   const original = boton.textContent;
   boton.textContent = "Generando imagen…";
@@ -254,16 +283,8 @@ async function generarImagenSlide(boton, slideObj, campo, contexto) {
   try {
     const prompt = `Diagrama educativo claro y simple, estilo ilustración técnica, fondo blanco, colores suaves, sin texto superpuesto: ${contexto}`;
     const { dataUrl, proveedor } = await generarImagen(prompt, (texto) => mostrarEstadoFooter(texto));
-    slideObj[campo] = (slideObj[campo] || "") + `\n\n![Imagen generada](${dataUrl})`;
-
-    const todasLasDiapositivas = slidesActuales
-      .filter(sl => sl.tipo === "teoria")
-      .map(sl => ({ titulo: sl.titulo, topico: sl.topico, contenido: sl.contenido, svg: sl.svg, modelo: sl.modelo, modo: sl.modo }));
-    const resto = extraerRestoDelContenido();
-    const contenidoCompleto = { diapositivas: todasLasDiapositivas, ...resto };
-    const markdownNuevo = reconstruirMarkdown(contenidoCompleto);
-    driveFileIdActivo = await guardarSesionEnDrive(cursoActivoSlug, sesionActivaNum, markdownNuevo, driveFileIdActivo);
-
+    slideObj.imagen = dataUrl;
+    await guardarCambiosDeContenido();
     mostrarEstadoFooter(`Imagen generada con ${proveedor} y guardada`);
     renderSlide();
   } catch (err) {
@@ -273,6 +294,20 @@ async function generarImagenSlide(boton, slideObj, campo, contexto) {
     boton.disabled = false;
     boton.textContent = original;
   }
+}
+
+async function quitarImagenSlide(slideObj) {
+  if (!confirm("¿Quitar esta imagen?")) return;
+  slideObj.imagen = "";
+  mostrarEstadoFooter("Quitando imagen…");
+  try {
+    await guardarCambiosDeContenido();
+    mostrarEstadoFooter("Imagen quitada y guardado");
+  } catch (err) {
+    alert("Error al guardar: " + err.message);
+    mostrarEstadoFooter("Error al quitar imagen");
+  }
+  renderSlide();
 }
 
 function renderCodigo(s, kicker, title, body) {

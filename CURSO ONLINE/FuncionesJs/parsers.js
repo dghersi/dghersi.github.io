@@ -30,7 +30,7 @@ export function parsearMarkdown(texto) {
       const topicoMatch = resto.match(/^\[(.+?)\]\s*(.*)$/);
       const topico = topicoMatch ? topicoMatch[1].trim() : resto;
       const titulo = topicoMatch ? topicoMatch[2].trim() : resto;
-      let contenido = cuerpo, svg = "", modelo, modo;
+      let contenido = cuerpo, svg = "", imagen = "", modelo, modo;
       const metaMatch = contenido.match(/^<!--\s*gen:\s*modelo=(\S+)\s+modo=(\S+)\s*-->\n?/i);
       if (metaMatch) {
         modelo = metaMatch[1]; modo = metaMatch[2];
@@ -41,19 +41,29 @@ export function parsearMarkdown(texto) {
         svg = svgMatch[1].trim();
         contenido = contenido.replace(svgMatch[0], "").trim();
       }
-      diapositivas.push({ titulo, topico, contenido: contenido.trim(), svg, ...(modelo && { modelo, modo }) });
+      const imagenMatch = contenido.match(/```imagen\s*([\s\S]*?)```/i);
+      if (imagenMatch) {
+        imagen = imagenMatch[1].trim();
+        contenido = contenido.replace(imagenMatch[0], "").trim();
+      }
+      diapositivas.push({ titulo, topico, contenido: contenido.trim(), svg, imagen, ...(modelo && { modelo, modo }) });
     } else if (/^Problema/i.test(header)) {
-      let svg = "";
+      let svg = "", imagen = "";
       let cuerpoLimpio = cuerpo;
       const svgMatchProb = cuerpo.match(/```svg\s*([\s\S]*?)```/i);
       if (svgMatchProb) {
         svg = svgMatchProb[1].trim();
         cuerpoLimpio = cuerpo.replace(svgMatchProb[0], "");
       }
+      const imagenMatchProb = cuerpoLimpio.match(/```imagen\s*([\s\S]*?)```/i);
+      if (imagenMatchProb) {
+        imagen = imagenMatchProb[1].trim();
+        cuerpoLimpio = cuerpoLimpio.replace(imagenMatchProb[0], "");
+      }
       problemas.push({
         enunciado: extraerCampoMd(cuerpoLimpio, "Enunciado", ["Solución", "Solucion"]),
         solucion: extraerCampoMd(cuerpoLimpio, "Soluci[oó]n", []),
-        svg
+        svg, imagen
       });
     } else if (/^C[oó]digo/i.test(header)) {
       const ref = header.replace(/^C[oó]digo:?\s*/i, "").trim();
@@ -141,13 +151,15 @@ export function reconstruirMarkdown(contenido) {
       `## Diapositiva ${i + 1}: [${d.topico || d.titulo}] ${d.titulo}\n` +
       (d.modelo && d.modo ? `<!-- gen: modelo=${d.modelo} modo=${d.modo} -->\n` : "") +
       `${d.contenido}` +
-      (d.svg ? `\n\n\`\`\`svg\n${d.svg}\n\`\`\`` : "")
+      (d.svg ? `\n\n\`\`\`svg\n${d.svg}\n\`\`\`` : "") +
+      (d.imagen ? `\n\n\`\`\`imagen\n${d.imagen}\n\`\`\`` : "")
     );
   });
   (contenido.problemas || []).forEach((p, i) => {
     partes.push(
       `## Problema ${i + 1}\n\n**Enunciado:**\n${p.enunciado}` +
       (p.svg ? `\n\n\`\`\`svg\n${p.svg}\n\`\`\`` : "") +
+      (p.imagen ? `\n\n\`\`\`imagen\n${p.imagen}\n\`\`\`` : "") +
       `\n\n**Solución:**\n${p.solucion}`
     );
   });
