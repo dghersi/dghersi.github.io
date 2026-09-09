@@ -15,7 +15,12 @@ let historial = []; // [{ rol: "usuario"|"ia", texto }] — solo en memoria, no 
 export function initChatIA() {
   document.getElementById("btnChatEnviar").addEventListener("click", enviarMensaje);
   document.getElementById("btnChatImagen").addEventListener("click", enviarImagen);
-  document.getElementById("chatInput").addEventListener("keydown", (e) => {
+  const input = document.getElementById("chatInput");
+  input.addEventListener("input", () => {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 120) + "px";
+  });
+  input.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       enviarMensaje();
@@ -28,6 +33,7 @@ async function enviarImagen() {
   const prompt = input.value.trim();
   if (!prompt) return;
   input.value = "";
+  input.style.height = "auto";
   historial.push({ rol: "usuario", texto: prompt });
   renderMensajes();
 
@@ -53,6 +59,7 @@ async function enviarMensaje() {
   const texto = input.value.trim();
   if (!texto) return;
   input.value = "";
+  input.style.height = "auto";
   historial.push({ rol: "usuario", texto });
   renderMensajes();
 

@@ -23,28 +23,23 @@ async function generarImagenGemini(apiKey, modelo, prompt) {
   return `data:${parte.inlineData.mimeType};base64,${parte.inlineData.data}`;
 }
 
-async function generarImagenCloudflare(accountId, apiToken, modelo, prompt) {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${modelo}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiToken}` },
-    body: JSON.stringify({ prompt })
+// Pollinations no requiere API key ni fetch — construye la URL y la valida
+// cargándola como <img>, evitando por completo el bloqueo CORS que sí afecta
+// a APIs como la de Cloudflare cuando se llaman directo desde el navegador.
+function verificarImagenCarga(url, timeoutMs = 20000) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const timer = setTimeout(() => reject(new Error("Tiempo de espera agotado cargando la imagen")), timeoutMs);
+    img.onload = () => { clearTimeout(timer); resolve(); };
+    img.onerror = () => { clearTimeout(timer); reject(new Error("No se pudo cargar la imagen de Pollinations")); };
+    img.src = url;
   });
-  if (!res.ok) {
-    const err = new Error(`(${res.status}) ${(await res.text()).slice(0, 200)}`);
-    err.status = res.status;
-    throw err;
-  }
-  const contentType = res.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    const data = await res.json();
-    const b64 = data?.result?.image;
-    if (!b64) throw new Error("Cloudflare no devolvió una imagen.");
-    return `data:image/png;base64,${b64}`;
-  }
-  const buffer = await (await res.blob()).arrayBuffer();
-  const b64 = btoa(new Uint8Array(buffer).reduce((s, b) => s + String.fromCharCode(b), ""));
-  return `data:image/png;base64,${b64}`;
+}
+
+async function generarImagenPollinations(prompt) {
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=512`;
+  await verificarImagenCarga(url);
+  return url;
 }
 
 // ==========================================
@@ -56,19 +51,14 @@ const PROVEEDORES_IMAGEN = [
     disponible: () => !!localStorage.getItem("gemini_api_key"),
     generar: (prompt) => generarImagenGemini(
       localStorage.getItem("gemini_api_key"),
-      localStorage.getItem("gemini_modelo_imagen") || "gemini-3.1-flash-image",
+      localStorage.getItem("gemini_modelo_imagen") || "gemini-2.5-flash-image",
       prompt
     )
   },
   {
-    nombre: "Cloudflare",
-    disponible: () => !!localStorage.getItem("cf_account_id") && !!localStorage.getItem("cf_api_token"),
-    generar: (prompt) => generarImagenCloudflare(
-      localStorage.getItem("cf_account_id"),
-      localStorage.getItem("cf_api_token"),
-      localStorage.getItem("cf_modelo_imagen") || "@cf/black-forest-labs/flux-1-schnell",
-      prompt
-    )
+    nombre: "Pollinations",
+    disponible: () => true, // no requiere API key
+    generar: (prompt) => generarImagenPollinations(prompt)
   }
 ];
 
