@@ -7,7 +7,7 @@ async function llamarProveedorGemini(apiKey, modelo, promptText) {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }], generationConfig: { temperature: 0.4 } })
+    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }], generationConfig: { temperature: 0.4, maxOutputTokens: 8192 } })
   });
   if (!res.ok) {
     const err = new Error(`(${res.status}) ${(await res.text()).slice(0, 200)}`);
@@ -17,6 +17,8 @@ async function llamarProveedorGemini(apiKey, modelo, promptText) {
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error("Respuesta vacía o con formato inesperado.");
+  const razon = data?.candidates?.[0]?.finishReason;
+  if (razon === "MAX_TOKENS") throw new Error("La respuesta se cortó por límite de tokens — intenta un Modo más corto o menos tópicos.");
   return text;
 }
 
@@ -24,7 +26,7 @@ async function llamarProveedorOpenAICompatible(baseUrl, apiKey, modelo, promptTe
   const res = await fetch(baseUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-    body: JSON.stringify({ model: modelo, messages: [{ role: "user", content: promptText }], temperature: 0.4 })
+    body: JSON.stringify({ model: modelo, messages: [{ role: "user", content: promptText }], temperature: 0.4, max_tokens: 8192 })
   });
   if (!res.ok) {
     const err = new Error(`(${res.status}) ${(await res.text()).slice(0, 200)}`);
@@ -34,6 +36,8 @@ async function llamarProveedorOpenAICompatible(baseUrl, apiKey, modelo, promptTe
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
   if (!text) throw new Error("Respuesta vacía o con formato inesperado.");
+  const razon = data?.choices?.[0]?.finish_reason;
+  if (razon === "length") throw new Error("La respuesta se cortó por límite de tokens — intenta un Modo más corto o menos tópicos.");
   return text;
 }
 

@@ -154,6 +154,34 @@
     <!-- SECCIÓN: GENERAR UNA SESIÓN -->
     <section class="panel" id="panel-generar">
       <fieldset>
+        <legend>Plantilla de prompt</legend>
+        <label>Plantilla guardada</label>
+        <select id="selectPlantilla"><option value="">— Predeterminada —</option></select>
+
+        <label>Destino</label>
+        <select id="selectDestino">
+          <option value="interno">Reproductor interno (formato fijo, se guarda en Drive)</option>
+          <option value="externo">Exportación externa (Markdown libre, no se guarda como sesión)</option>
+        </select>
+
+        <label>Rol</label>
+        <textarea id="campoRol" rows="2" placeholder="Eres {ROL_EXPERTO}, actuando como Profesor Titular..."></textarea>
+        <label>Instrucción</label>
+        <textarea id="campoInstruccion" rows="5" placeholder="Requisitos de rigor y profundidad..."></textarea>
+        <label>Restricciones</label>
+        <textarea id="campoRestricciones" rows="5" placeholder="Estructura sugerida, mínimos de extensión..."></textarea>
+        <label>Formato de salida</label>
+        <textarea id="campoFormatoSalida" rows="4" disabled placeholder="Solo editable en destino 'Exportación externa'"></textarea>
+        <p class="hint">Deja los campos vacíos para usar los valores por defecto de la app.</p>
+
+        <div class="row" style="margin-top:1rem">
+          <div><input id="nombrePlantillaNueva" placeholder="Nombre para guardar esta plantilla" /></div>
+        </div>
+        <button class="secondary" id="btnGuardarPlantilla">Guardar plantilla</button>
+        <p class="msg" id="msgPlantilla"></p>
+      </fieldset>
+
+      <fieldset>
         <legend>2. Generar una sesión</legend>
         <label>Curso</label>
         <select id="selectCursoGenerar"><option value="">— Selecciona un curso —</option></select>
@@ -184,6 +212,13 @@
           Regenerar sesiones que ya existen (por defecto se saltan)
         </label>
         <p class="hint">Usa la "Lista completa de sesiones" guardada en el curso. El log de avance aparece en el panel derecho.</p>
+        <label>Plantilla de prompt</label>
+        <select id="selectPlantillaTodas"><option value="">— Predeterminada —</option></select>
+        <label>Destino</label>
+        <select id="selectDestinoTodas">
+          <option value="interno">Reproductor interno (formato fijo, se guarda en Drive)</option>
+          <option value="externo">Exportación externa (Markdown libre, no se guarda como sesión)</option>
+        </select>
         <label>Modo de sesión (aplica a todas las sesiones del lote)</label>
         <select id="modoGenerarTodas">
           <option value="corto">Corto (3 diapositivas por tópico)</option>

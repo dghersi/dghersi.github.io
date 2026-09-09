@@ -2,45 +2,101 @@
 // PLANTILLAS DE TEXTO PARA LA IA
 // ==========================================
 
-// ==========================================
-// PLANTILLAS DE TEXTO PARA LA IA
-// ==========================================
+// ---------- Valores por defecto (usados si el usuario no personaliza la plantilla) ----------
 
-// Ángulos sugeridos para desarrollar un tópico en profundidad, según cuántas
-// diapositivas le corresponden. Sirve para que la IA no "rellene" el número
-// pedido fragmentando una explicación corta en piezas triviales.
 function angulosPorCantidad(cantidad) {
   const todos = [
-    "Definición y contexto general del tópico",
-    "Fundamento teórico/matemático (fórmulas clave y qué representa cada término)",
-    "Interpretación física / qué significa esto en la práctica",
-    "Primer ejemplo resuelto que ilustre el concepto",
+    "Definición y contexto general del tópico, explicado desde los principios primarios",
+    "Fundamento teórico/matemático completo: ecuación(es) gobernante(s) en LaTeX, cada variable/parámetro/constante definido con sus unidades en el Sistema Internacional (SI) y, cuando sea relevante, en el Sistema Inglés — incluye la deducción paso a paso si corresponde",
+    "Interpretación física / significado práctico, con una tabla Markdown de datos, propiedades numéricas o valores típicos cuando el tópico lo permita",
+    "Ejemplo numérico resuelto paso a paso: planteamiento, análisis dimensional y conclusión",
     "Casos particulares, límites o excepciones a tener en cuenta",
-    "Segundo ejemplo resuelto, algo más complejo que el primero",
+    "Segundo ejemplo resuelto, más complejo que el primero, con su propio análisis dimensional",
     "Relación con otros conceptos de la sesión / síntesis integradora"
   ];
   return todos.slice(0, cantidad).map((a, i) => `${i + 1}. ${a}`).join("\n");
 }
 
-function guardrailAntiFragmentacion(cantidad) {
-  return `IMPORTANTE — no fragmentes el tema en piezas triviales: cada una de las
-${cantidad} diapositivas de un mismo tópico debe tener contenido sustancial y
-autocontenido de AL MENOS 70 palabras, cubriendo un ángulo distinto y completo
-del tópico (nunca una sola oración suelta para "rellenar" el número pedido). Usa
-esta estructura sugerida para las ${cantidad} diapositivas de cada tópico:
-${angulosPorCantidad(cantidad)}
-Si el tópico es demasiado simple para sostener este nivel de profundidad en todas,
-profundiza igual con ejemplos adicionales, contexto, unidades, casos límite o
-comparaciones — nunca reduzcas una diapositiva a una frase para cumplir el número.`;
+function instruccionPorDefecto() {
+  return `1. Desarrollo teórico completo y extenso — nunca esquemas breves ni listas simples.
+   Cada diapositiva debe tener contenido sustancial de AL MENOS 130 palabras en
+   prosa desarrollada (no viñetas sueltas), cubriendo un ángulo distinto y
+   completo del tópico.
+2. Rigor matemático: ecuaciones gobernantes completas en LaTeX ($...$), con CADA
+   variable, parámetro y constante definida junto a sus unidades en el Sistema
+   Internacional (SI) y, cuando sea relevante, en el Sistema Inglés. Incluye
+   deducciones matemáticas paso a paso cuando el ángulo lo requiera.
+3. Soporte de datos: cuando el ángulo lo permita, incluye una tabla en formato
+   Markdown (| columna | columna |) con datos técnicos, propiedades o valores
+   comparativos — no solo texto corrido.
+4. Aplicación práctica: los ángulos de "ejemplo resuelto" deben incluir un caso
+   numérico completo con planteamiento, análisis dimensional explícito y
+   conclusión — no solo el resultado final.`;
 }
 
-export function construirPrompt(curso, numSesion, tema, modo = "largo") {
-  const porTopico = { corto: 3, largo: 5, extenso: 7 }[modo] || 5;
-  const extraEjemplos = modo === "extenso"
-    ? " Incorpora al menos un ejemplo concreto resuelto dentro de las diapositivas de cada tópico."
-    : "";
+function restriccionesPorDefecto(cantidad) {
+  return `No fragmentes el tema en piezas triviales para cumplir el número pedido.
+Usa esta estructura sugerida para las ${cantidad} diapositivas de cada tópico:
+${angulosPorCantidad(cantidad)}
+Si el tópico es demasiado simple para sostener este nivel de profundidad en todas,
+profundiza igual con ejemplos adicionales, contexto histórico, unidades, casos
+límite o comparaciones — nunca reduzcas una diapositiva a una frase o viñeta breve.`;
+}
 
-  return `Eres ${curso.rol_experto}. Vas a generar el material de estudio de UNA sesión de un curso, en formato Markdown limpio y legible (alguien lo podrá abrir directo en Google Drive o cualquier editor de texto).
+// Plantilla por defecto — se usa si el curso/generación no tiene una plantilla
+// personalizada guardada. El marcador {ROL_EXPERTO} se reemplaza por el rol
+// definido en los Datos del curso al momento de generar.
+export function plantillaPorDefecto() {
+  return {
+    nombre: "Por defecto",
+    rol: "Eres {ROL_EXPERTO}, actuando como Profesor Titular de Universidad y experto en Pedagogía Técnica. Tu objetivo es producir material de estudio avanzado, extenso y de máxima profundidad académica.",
+    instruccion: instruccionPorDefecto(),
+    restricciones: "", // vacío = se calcula según el modo (ver restriccionesPorDefecto)
+    formato_salida: "",
+    modo_destino: "interno"
+  };
+}
+
+// ---------- Prompt principal: generación completa de una sesión ----------
+
+export function construirPrompt(curso, numSesion, tema, modo = "largo", plantilla = null) {
+  const p = plantilla || plantillaPorDefecto();
+  const porTopico = { corto: 3, largo: 5, extenso: 7 }[modo] || 5;
+  const rol = (p.rol || plantillaPorDefecto().rol).replace(/\{ROL_EXPERTO\}/g, curso.rol_experto);
+  const instruccion = p.instruccion || instruccionPorDefecto();
+  const restricciones = p.restricciones || restriccionesPorDefecto(porTopico);
+
+  // Modo "externo": formato de salida libre, definido por el usuario — no
+  // imponemos nuestra estructura de encabezados porque esto no se guarda como
+  // sesión reproducible en la app, solo se descarga/exporta.
+  if (p.modo_destino === "externo") {
+    return `${rol}
+
+Curso: ${curso.nombre_curso}
+Fuente principal: ${curso.fuente_principal}
+Fuentes complementarias: ${curso.fuentes_complementarias || "ninguna adicional"}
+Idioma: ${curso.idioma}. Notación especial: ${curso.notacion_especial}.
+
+Sesión número ${numSesion}. Tema de esta sesión:
+"""
+${tema}
+"""
+
+INSTRUCCIÓN:
+${instruccion}
+
+RESTRICCIONES:
+${restricciones}
+
+FORMATO DE SALIDA (usa EXACTAMENTE el formato que se indica a continuación):
+${p.formato_salida || "Markdown claro, con encabezados ## por cada sección/tópico."}`;
+  }
+
+  // Modo "interno": mismo esqueleto fijo de encabezados que necesita el parser
+  // de la app, con instrucción/restricciones personalizables inyectadas.
+  return `${rol}
+
+Vas a generar el material de estudio de UNA sesión de un curso, en formato Markdown limpio y legible (alguien lo podrá abrir directo en Google Drive o cualquier editor de texto).
 
 Fuente principal de contenido: ${curso.fuente_principal}
 Fuentes complementarias: ${curso.fuentes_complementarias || "ninguna adicional"}
@@ -59,12 +115,16 @@ que se divide este tema (normalmente entre 2 y 5, según la complejidad — tú
 decides cuántos tiene este tema en particular).
 
 PASO 2: Para CADA tópico identificado, genera EXACTAMENTE ${porTopico} diapositivas
-que lo desarrollen en profundidad — ni una menos ni una más.${extraEjemplos} Todas las
+que lo desarrollen en profundidad — ni una menos ni una más. Todas las
 diapositivas de un mismo tópico deben llevar el MISMO nombre de tópico entre
 corchetes en su título, así: "## Diapositiva N: [Nombre del tópico] Subtítulo
 específico de esa diapositiva dentro del tópico".
 
-${guardrailAntiFragmentacion(porTopico)}
+INSTRUCCIÓN (requisitos de rigor y profundidad para cada diapositiva de teoría):
+${instruccion}
+
+RESTRICCIONES:
+${restricciones}
 
 Devuelve EXCLUSIVAMENTE Markdown válido con esta estructura EXACTA de encabezados
 (nada de texto antes del primer encabezado ni después del último; las fórmulas LaTeX
@@ -137,7 +197,9 @@ Tópico específico a desarrollar: "${tituloTopico}"
 Idioma: ${curso.idioma}. Notación especial: ${curso.notacion_especial}.
 Genera EXACTAMENTE ${cantidad} diapositivas que desarrollen este tópico — ni una menos ni una más.${extra}
 
-${guardrailAntiFragmentacion(cantidad)}
+${instruccionPorDefecto()}
+
+${restriccionesPorDefecto(cantidad)}
 
 Devuelve EXCLUSIVAMENTE Markdown con esta estructura, repetida EXACTAMENTE ${cantidad}
 veces (fórmulas LaTeX con $...$ y backslash normal, sin escapar nada):

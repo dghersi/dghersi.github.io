@@ -1,4 +1,4 @@
-import { db, doc, setDoc, getDoc, poblarSelectCursos } from "../SetupJs/firebase-cliente.js";
+import { db, doc, setDoc, getDoc, getDocs, collection, poblarSelectCursos } from "../SetupJs/firebase-cliente.js";
 import { iniciarTokenClient, solicitarAccesoDrive, guardarSesionEnDrive } from "../SetupJs/drive.js";
 import { llamarIA, obtenerUltimoProveedor } from "../SetupJs/ia-cliente.js";
 import { construirPrompt } from "../FuncionesJs/prompts.js";
@@ -12,6 +12,7 @@ export function initCrearCurso() {
   initConexionDrive();
   initClavesIA();
   initFormularioCurso();
+  initPlantillas();
   initGenerarSesion();
   initGenerarTodas();
 }
@@ -149,6 +150,103 @@ function initFormularioCurso() {
   });
 }
 
+// ---------- Plantillas de prompt (por curso, guardadas en Firebase) ----------
+async function poblarSelectPlantillas(slug, selectEl) {
+  selectEl.innerHTML = '<option value="">— Predeterminada —</option>';
+  if (!slug) return;
+  const snap = await getDocs(collection(db, "cursos", slug, "plantillas_prompt"));
+  snap.forEach(d => {
+    const opt = document.createElement("option");
+    opt.value = d.id;
+    opt.textContent = d.data().nombre || d.id;
+    selectEl.appendChild(opt);
+  });
+}
+
+function actualizarDisabledFormato() {
+  const destino = document.getElementById("selectDestino").value;
+  document.getElementById("campoFormatoSalida").disabled = destino !== "externo";
+}
+
+async function cargarPlantillaEnCampos(slug, idPlantilla) {
+  if (!idPlantilla) {
+    document.getElementById("campoRol").value = "";
+    document.getElementById("campoInstruccion").value = "";
+    document.getElementById("campoRestricciones").value = "";
+    document.getElementById("campoFormatoSalida").value = "";
+    document.getElementById("selectDestino").value = "interno";
+    document.getElementById("nombrePlantillaNueva").value = "";
+    actualizarDisabledFormato();
+    return;
+  }
+  const snap = await getDoc(doc(db, "cursos", slug, "plantillas_prompt", idPlantilla));
+  if (!snap.exists()) return;
+  const p = snap.data();
+  document.getElementById("campoRol").value = p.rol || "";
+  document.getElementById("campoInstruccion").value = p.instruccion || "";
+  document.getElementById("campoRestricciones").value = p.restricciones || "";
+  document.getElementById("campoFormatoSalida").value = p.formato_salida || "";
+  document.getElementById("selectDestino").value = p.modo_destino || "interno";
+  document.getElementById("nombrePlantillaNueva").value = p.nombre || "";
+  actualizarDisabledFormato();
+}
+
+function leerPlantillaDeCampos() {
+  return {
+    rol: document.getElementById("campoRol").value.trim(),
+    instruccion: document.getElementById("campoInstruccion").value.trim(),
+    restricciones: document.getElementById("campoRestricciones").value.trim(),
+    formato_salida: document.getElementById("campoFormatoSalida").value.trim(),
+    modo_destino: document.getElementById("selectDestino").value
+  };
+}
+
+function initPlantillas() {
+  document.getElementById("selectDestino").addEventListener("change", actualizarDisabledFormato);
+  actualizarDisabledFormato();
+
+  document.getElementById("selectCursoGenerar").addEventListener("change", (e) => {
+    poblarSelectPlantillas(e.target.value, document.getElementById("selectPlantilla"));
+  });
+  document.getElementById("selectPlantilla").addEventListener("change", (e) => {
+    const slug = document.getElementById("selectCursoGenerar").value;
+    cargarPlantillaEnCampos(slug, e.target.value);
+  });
+  document.getElementById("btnGuardarPlantilla").addEventListener("click", async () => {
+    const msg = document.getElementById("msgPlantilla");
+    const slug = document.getElementById("selectCursoGenerar").value;
+    const nombre = document.getElementById("nombrePlantillaNueva").value.trim();
+    if (!slug) { msg.textContent = "Selecciona un curso primero (en la sección 2, más abajo)."; msg.className = "msg error"; return; }
+    if (!nombre) { msg.textContent = "Ponle un nombre a la plantilla."; msg.className = "msg error"; return; }
+    try {
+      const idExistente = document.getElementById("selectPlantilla").value;
+      const idPlantilla = idExistente || nombre.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || ("plantilla-" + Date.now());
+      const datos = { nombre, ...leerPlantillaDeCampos(), fecha_actualizacion: new Date().toISOString() };
+      await setDoc(doc(db, "cursos", slug, "plantillas_prompt", idPlantilla), datos, { merge: true });
+      msg.textContent = "✓ Plantilla guardada."; msg.className = "msg ok";
+      mostrarEstadoFooter(`Plantilla "${nombre}" guardada`);
+      await poblarSelectPlantillas(slug, document.getElementById("selectPlantilla"));
+      document.getElementById("selectPlantilla").value = idPlantilla;
+      await poblarSelectPlantillas(slug, document.getElementById("selectPlantillaTodas"));
+    } catch (err) {
+      msg.textContent = "Error: " + err.message; msg.className = "msg error";
+    }
+  });
+
+  document.getElementById("selectCursoGenerarTodas").addEventListener("change", (e) => {
+    poblarSelectPlantillas(e.target.value, document.getElementById("selectPlantillaTodas"));
+  });
+}
+
+// ---------- Utilidad: descargar texto como archivo (modo destino "externo") ----------
+function descargarTexto(nombreArchivo, contenido) {
+  const blob = new Blob([contenido], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = nombreArchivo; a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ---------- Generar una sesión ----------
 function initGenerarSesion() {
   document.getElementById("btnGenerar").addEventListener("click", async () => {
@@ -157,6 +255,7 @@ function initGenerarSesion() {
     const numSesion = document.getElementById("numSesion").value;
     const tema = document.getElementById("temaSesion").value.trim();
     const modo = document.getElementById("modoGenerar").value;
+    const plantilla = leerPlantillaDeCampos();
     if (!slug || !numSesion || !tema) {
       msg.textContent = "Selecciona el curso, el número de sesión y pega el tema."; msg.className = "msg error"; return;
     }
@@ -168,22 +267,30 @@ function initGenerarSesion() {
       const cursoSnap = await getDoc(doc(db, "cursos", slug));
       if (!cursoSnap.exists()) throw new Error("Curso no encontrado.");
       const curso = cursoSnap.data();
-      const prompt = construirPrompt(curso, numSesion, tema, modo);
-      const markdown = await llamarIA(prompt, (texto) => { msg.textContent = texto; });
-      const refSesion = doc(db, "cursos", slug, "sesiones", "sesion_" + numSesion);
-      const existente = await getDoc(refSesion);
-      const fileIdExistente = existente.exists() ? existente.data().drive_file_id : null;
-      const fileId = await guardarSesionEnDrive(slug, curso.nombre_curso, numSesion, markdown, fileIdExistente);
-      await setDoc(refSesion, {
-        drive_file_id: fileId,
-        drive_file_name: `${slug}_sesion_${numSesion}.md`,
-        tema, fecha_generacion: new Date().toISOString(),
-        modelo_usado: obtenerUltimoProveedor() || "Auto",
-        modo_generado: modo
-      });
-      msg.textContent = `✓ Sesión ${numSesion} generada y guardada en Drive. Ve a "Reproductor" para estudiarla.`;
-      msg.className = "msg ok";
-      mostrarEstadoFooter(`Sesión ${numSesion} generada`);
+      const prompt = construirPrompt(curso, numSesion, tema, modo, plantilla);
+      const resultado = await llamarIA(prompt, (texto) => { msg.textContent = texto; });
+
+      if (plantilla.modo_destino === "externo") {
+        descargarTexto(`${slug}_sesion_${numSesion}_externo.md`, resultado);
+        msg.textContent = `✓ Generado y descargado (formato libre) — no se guardó como sesión reproducible.`;
+        msg.className = "msg ok";
+        mostrarEstadoFooter(`Sesión ${numSesion} generada (externo, descargada)`);
+      } else {
+        const refSesion = doc(db, "cursos", slug, "sesiones", "sesion_" + numSesion);
+        const existente = await getDoc(refSesion);
+        const fileIdExistente = existente.exists() ? existente.data().drive_file_id : null;
+        const fileId = await guardarSesionEnDrive(slug, curso.nombre_curso, numSesion, resultado, fileIdExistente);
+        await setDoc(refSesion, {
+          drive_file_id: fileId,
+          drive_file_name: `sesion_${numSesion}.md`,
+          tema, fecha_generacion: new Date().toISOString(),
+          modelo_usado: obtenerUltimoProveedor() || "Auto",
+          modo_generado: modo
+        });
+        msg.textContent = `✓ Sesión ${numSesion} generada y guardada en Drive. Ve a "Reproductor" para estudiarla.`;
+        msg.className = "msg ok";
+        mostrarEstadoFooter(`Sesión ${numSesion} generada`);
+      }
     } catch (err) {
       msg.textContent = "Error: " + err.message; msg.className = "msg error";
       mostrarEstadoFooter("Error al generar la sesión");
@@ -221,6 +328,16 @@ function initGenerarTodas() {
     }
     const regenerar = document.getElementById("regenerarExistentes").checked;
     const modo = document.getElementById("modoGenerarTodas").value;
+    const idPlantilla = document.getElementById("selectPlantillaTodas").value;
+    let plantilla = null;
+    if (idPlantilla) {
+      const snapPlantilla = await getDoc(doc(db, "cursos", slug, "plantillas_prompt", idPlantilla));
+      plantilla = snapPlantilla.exists() ? snapPlantilla.data() : null;
+    }
+    const modoDestino = document.getElementById("selectDestinoTodas").value;
+    if (plantilla) plantilla.modo_destino = modoDestino;
+    else plantilla = { modo_destino: modoDestino };
+
     logTodas.innerHTML = "";
     logTodas.style.display = "block";
     logLinea(`Encontradas ${sesiones.length} sesiones en la lista. Empezando…`);
@@ -233,10 +350,11 @@ function initGenerarTodas() {
     btnDetener.style.display = "inline-block";
 
     let generadas = 0, saltadas = 0, fallidas = 0;
+    const resultadosExternos = [];
     for (const s of sesiones) {
       if (detenerLote) { logLinea("Detenido por el usuario.", "error"); break; }
       const refSesion = doc(db, "cursos", slug, "sesiones", "sesion_" + s.numero);
-      if (!regenerar) {
+      if (modoDestino === "interno" && !regenerar) {
         const existe = await getDoc(refSesion);
         if (existe.exists()) {
           logLinea(`Sesión ${s.numero}: ya existe, se salta.`);
@@ -246,18 +364,23 @@ function initGenerarTodas() {
       }
       logLinea(`Sesión ${s.numero}: generando…`);
       try {
-        const prompt = construirPrompt(curso, s.numero, s.tema, modo);
-        const markdown = await llamarIA(prompt);
-        const existePointer = await getDoc(refSesion);
-        const fileIdExistente = (regenerar && existePointer.exists()) ? existePointer.data().drive_file_id : null;
-        const fileIdFinal = await guardarSesionEnDrive(slug, curso.nombre_curso, s.numero, markdown, fileIdExistente);
-        await setDoc(refSesion, {
-          drive_file_id: fileIdFinal,
-          drive_file_name: `${slug}_sesion_${s.numero}.md`,
-          tema: s.tema, fecha_generacion: new Date().toISOString(),
-          modelo_usado: obtenerUltimoProveedor() || "Auto",
-          modo_generado: modo
-        });
+        const prompt = construirPrompt(curso, s.numero, s.tema, modo, plantilla);
+        const resultado = await llamarIA(prompt);
+
+        if (modoDestino === "externo") {
+          resultadosExternos.push(`\n\n---\n\n# Sesión ${s.numero}: ${s.tema}\n\n${resultado}`);
+        } else {
+          const existePointer = await getDoc(refSesion);
+          const fileIdExistente = (regenerar && existePointer.exists()) ? existePointer.data().drive_file_id : null;
+          const fileIdFinal = await guardarSesionEnDrive(slug, curso.nombre_curso, s.numero, resultado, fileIdExistente);
+          await setDoc(refSesion, {
+            drive_file_id: fileIdFinal,
+            drive_file_name: `sesion_${s.numero}.md`,
+            tema: s.tema, fecha_generacion: new Date().toISOString(),
+            modelo_usado: obtenerUltimoProveedor() || "Auto",
+            modo_generado: modo
+          });
+        }
         logLinea(`Sesión ${s.numero}: ✓ generada.`, "ok");
         generadas++;
       } catch (err) {
@@ -266,6 +389,12 @@ function initGenerarTodas() {
       }
       await new Promise(r => setTimeout(r, 4000)); // pausa entre llamadas para no saturar la API
     }
+
+    if (modoDestino === "externo" && resultadosExternos.length > 0) {
+      descargarTexto(`${slug}_lote_externo.md`, `# ${curso.nombre_curso}` + resultadosExternos.join(""));
+      logLinea(`Descargado ${slug}_lote_externo.md con ${resultadosExternos.length} sesiones (formato libre, no guardadas como sesión reproducible).`);
+    }
+
     logLinea(`Terminado. Generadas: ${generadas} — Saltadas: ${saltadas} — Con error: ${fallidas}.`);
     mostrarEstadoFooter(`Lote terminado: ${generadas} generadas, ${fallidas} con error`);
     btnGenerarTodas.disabled = false;
