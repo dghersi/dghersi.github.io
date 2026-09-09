@@ -37,7 +37,7 @@ function verificarImagenCarga(url, timeoutMs = 20000) {
 }
 
 async function generarImagenPollinations(prompt) {
-  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=512`;
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=512&model=flux&nologo=true`;
   await verificarImagenCarga(url);
   return url;
 }
