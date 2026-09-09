@@ -10,6 +10,8 @@ export function formatearTexto(texto) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
   t = t.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  t = t.replace(/!\[([^\]]*)\]\((data:[^)]+|https?:\/\/[^)]+)\)/g,
+    '<img src="$2" alt="$1" style="max-width:100%;border-radius:6px;margin:.5rem 0;display:block;">');
 
   const lineas = t.split("\n");
   const partes = [];

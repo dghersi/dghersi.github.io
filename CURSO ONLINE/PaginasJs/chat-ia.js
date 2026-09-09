@@ -1,4 +1,5 @@
 import { llamarIA } from "../SetupJs/ia-cliente.js";
+import { generarImagen } from "../SetupJs/imagenes.js";
 import { construirPromptChat } from "../FuncionesJs/prompts.js";
 import { formatearTexto } from "../FuncionesJs/formato.js";
 import { mostrarEstadoFooter } from "./estado.js";
@@ -13,12 +14,38 @@ let historial = []; // [{ rol: "usuario"|"ia", texto }] — solo en memoria, no 
 // ==========================================
 export function initChatIA() {
   document.getElementById("btnChatEnviar").addEventListener("click", enviarMensaje);
+  document.getElementById("btnChatImagen").addEventListener("click", enviarImagen);
   document.getElementById("chatInput").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       enviarMensaje();
     }
   });
+}
+
+async function enviarImagen() {
+  const input = document.getElementById("chatInput");
+  const prompt = input.value.trim();
+  if (!prompt) return;
+  input.value = "";
+  historial.push({ rol: "usuario", texto: prompt });
+  renderMensajes();
+
+  const btn = document.getElementById("btnChatImagen");
+  btn.disabled = true;
+  agregarBurbujaPendiente();
+  try {
+    const { dataUrl, proveedor } = await generarImagen(prompt, (texto) => mostrarEstadoFooter(texto));
+    historial.push({ rol: "ia", texto: `![Imagen generada](${dataUrl})` });
+    mostrarEstadoFooter(`Imagen generada con ${proveedor}`);
+  } catch (err) {
+    historial.push({ rol: "ia", texto: "⚠️ Error: " + err.message });
+    mostrarEstadoFooter("Error al generar imagen");
+  } finally {
+    quitarBurbujaPendiente();
+    renderMensajes();
+    btn.disabled = false;
+  }
 }
 
 async function enviarMensaje() {

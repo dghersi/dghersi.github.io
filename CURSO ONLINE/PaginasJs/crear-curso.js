@@ -65,6 +65,23 @@ function initClavesIA() {
     actualizarPillIA();
     mostrarEstadoFooter("Claves de IA actualizadas");
   });
+
+  const camposImagen = {
+    geminiModeloImagen: "gemini_modelo_imagen",
+    cfAccountId: "cf_account_id", cfApiToken: "cf_api_token", cfModeloImagen: "cf_modelo_imagen"
+  };
+  Object.entries(camposImagen).forEach(([id, key]) => {
+    document.getElementById(id).value = localStorage.getItem(key) || document.getElementById(id).value;
+  });
+  document.getElementById("btnGuardarClavesImagen").addEventListener("click", () => {
+    Object.entries(camposImagen).forEach(([id, key]) => {
+      localStorage.setItem(key, document.getElementById(id).value.trim());
+    });
+    const m = document.getElementById("msgImagenes");
+    m.textContent = "✓ Guardado en este navegador.";
+    m.className = "msg ok";
+    mostrarEstadoFooter("Credenciales de imágenes actualizadas");
+  });
 }
 
 // ---------- Formulario de datos del curso ----------

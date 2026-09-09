@@ -1,6 +1,7 @@
 import { db, doc, setDoc, getDoc, getDocs, deleteDoc, collection, poblarSelectCursos } from "../SetupJs/firebase-cliente.js";
 import { leerArchivoDrive, guardarSesionEnDrive } from "../SetupJs/drive.js";
 import { llamarIA, obtenerUltimoProveedor } from "../SetupJs/ia-cliente.js";
+import { generarImagen } from "../SetupJs/imagenes.js";
 import { parsearMarkdown, parsearCorrecciones, parsearExamenSolo, parsearDiapositivasSolo, reconstruirMarkdown } from "../FuncionesJs/parsers.js";
 import { construirPromptCorreccion, construirPromptExamenNuevo, construirPromptTopico } from "../FuncionesJs/prompts.js";
 import { formatearTexto } from "../FuncionesJs/formato.js";
@@ -224,6 +225,7 @@ function renderTeoria(s, kicker, title, body, svgBox) {
   title.textContent = s.titulo;
   body.innerHTML = formatearTexto(s.contenido);
   if (s.svg) svgBox.innerHTML = s.svg;
+  agregarBotonImagen(body, s, "contenido", s.titulo);
 }
 
 function renderProblema(s, kicker, title, body, svgBox) {
@@ -231,6 +233,46 @@ function renderProblema(s, kicker, title, body, svgBox) {
   title.textContent = "Enunciado";
   body.innerHTML = formatearTexto(s.enunciado) + "<br><br><strong>— Solución —</strong><br>" + formatearTexto(s.solucion);
   if (s.svg) svgBox.innerHTML = s.svg;
+  agregarBotonImagen(body, s, "enunciado", s.enunciado.slice(0, 120));
+}
+
+// ---------- Generación de imágenes para una diapositiva/problema ----------
+function agregarBotonImagen(body, slideObj, campo, contexto) {
+  const btn = document.createElement("button");
+  btn.className = "secondary";
+  btn.textContent = "🖼️ Generar imagen";
+  btn.style.marginTop = "1rem";
+  btn.addEventListener("click", () => generarImagenSlide(btn, slideObj, campo, contexto));
+  body.appendChild(btn);
+}
+
+async function generarImagenSlide(boton, slideObj, campo, contexto) {
+  boton.disabled = true;
+  const original = boton.textContent;
+  boton.textContent = "Generando imagen…";
+  mostrarEstadoFooter("Generando imagen…");
+  try {
+    const prompt = `Diagrama educativo claro y simple, estilo ilustración técnica, fondo blanco, colores suaves, sin texto superpuesto: ${contexto}`;
+    const { dataUrl, proveedor } = await generarImagen(prompt, (texto) => mostrarEstadoFooter(texto));
+    slideObj[campo] = (slideObj[campo] || "") + `\n\n![Imagen generada](${dataUrl})`;
+
+    const todasLasDiapositivas = slidesActuales
+      .filter(sl => sl.tipo === "teoria")
+      .map(sl => ({ titulo: sl.titulo, topico: sl.topico, contenido: sl.contenido, svg: sl.svg, modelo: sl.modelo, modo: sl.modo }));
+    const resto = extraerRestoDelContenido();
+    const contenidoCompleto = { diapositivas: todasLasDiapositivas, ...resto };
+    const markdownNuevo = reconstruirMarkdown(contenidoCompleto);
+    driveFileIdActivo = await guardarSesionEnDrive(cursoActivoSlug, sesionActivaNum, markdownNuevo, driveFileIdActivo);
+
+    mostrarEstadoFooter(`Imagen generada con ${proveedor} y guardada`);
+    renderSlide();
+  } catch (err) {
+    alert("Error al generar imagen: " + err.message);
+    mostrarEstadoFooter("Error al generar imagen");
+  } finally {
+    boton.disabled = false;
+    boton.textContent = original;
+  }
 }
 
 function renderCodigo(s, kicker, title, body) {

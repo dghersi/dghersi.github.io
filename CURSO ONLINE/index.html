@@ -29,6 +29,7 @@
   <nav class="app-sidebar-left">
     <button class="side-nav-item active" data-tab="drive">Conexión Drive</button>
     <button class="side-nav-item" data-tab="ia">Conexión IA</button>
+    <button class="side-nav-item" data-tab="imagenes">Imágenes</button>
     <button class="side-nav-item" data-tab="datos">Datos del curso</button>
     <button class="side-nav-item" data-tab="generar">Generar sesión</button>
     <button class="side-nav-item" data-tab="generar-todas">Generar todas</button>
@@ -76,6 +77,31 @@
 
         <button class="secondary" id="btnGuardarKey">Guardar todas las claves</button>
         <p class="msg" id="msgKey"></p>
+      </fieldset>
+    </section>
+
+    <!-- SECCIÓN: CONEXIÓN IMÁGENES -->
+    <section class="panel" id="panel-imagenes">
+      <fieldset>
+        <legend>Generación de imágenes (con respaldo automático)</legend>
+        <p class="hint">Se intenta primero con Gemini (Nano Banana); si falla o no está configurado, pasa a Cloudflare.</p>
+
+        <label style="margin-top:1rem"><strong>1) Gemini — Nano Banana</strong></label>
+        <p class="hint">Usa la misma API key de Gemini que ya guardaste en "Conexión IA".</p>
+        <label>Modelo de imagen</label>
+        <input id="geminiModeloImagen" value="gemini-3.1-flash-image" />
+
+        <label style="margin-top:1.5rem"><strong>2) Cloudflare Workers AI (respaldo)</strong></label>
+        <label>Account ID</label>
+        <input id="cfAccountId" placeholder="tu-account-id" />
+        <label>API Token</label>
+        <input id="cfApiToken" type="password" placeholder="..." />
+        <label>Modelo</label>
+        <input id="cfModeloImagen" value="@cf/black-forest-labs/flux-1-schnell" />
+        <p class="hint">Gratis: ~10,000 neuronas/día (≈230 imágenes) en dash.cloudflare.com → Workers AI → API Tokens.</p>
+
+        <button class="secondary" id="btnGuardarClavesImagen">Guardar credenciales de imágenes</button>
+        <p class="msg" id="msgImagenes"></p>
       </fieldset>
     </section>
 
@@ -222,7 +248,8 @@
       <div class="chat-mensajes" id="chatMensajes"></div>
       <div class="chat-input-row">
         <textarea id="chatInput" rows="2" placeholder="Escribe tu pregunta… (Enter para enviar)"></textarea>
-        <button class="primary" id="btnChatEnviar">Enviar</button>
+        <button class="secondary" id="btnChatImagen" style="margin-top:0">🖼️ Imagen</button>
+        <button class="primary" id="btnChatEnviar" style="margin-top:0">Enviar</button>
       </div>
     </div>
   </aside>
