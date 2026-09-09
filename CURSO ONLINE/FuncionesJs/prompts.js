@@ -160,6 +160,18 @@ Devuelve EXCLUSIVAMENTE este formato de texto plano, sin nada más antes ni desp
 (mismo número y orden que las preguntas)`;
 }
 
+// Genera una descripción visual concreta a partir del contenido de una
+// diapositiva/problema, para usarla como prompt de imagen — mucho más relevante
+// que mandar solo el título, ya que el modelo de imagen no entiende el tema por sí solo.
+export function construirPromptDescripcionVisual(contenidoTexto) {
+  return `Basado en este contenido educativo, describe en UNA sola frase corta y muy concreta qué imagen o diagrama ayudaría a visualizarlo mejor (objetos, formas, disposición espacial, colores si aplica). No pidas texto ni letras en la imagen. Responde SOLO con la descripción de la imagen, sin explicaciones ni introducciones ni comillas.
+
+Contenido:
+"""
+${contenidoTexto}
+"""`;
+}
+
 // Arma el prompt del chat libre concatenando el historial de la conversación
 // (nuestros proveedores de IA reciben un solo bloque de texto, no un arreglo
 // de turnos, así que el historial se pliega dentro del mismo prompt).

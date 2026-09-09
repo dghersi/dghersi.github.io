@@ -40,7 +40,7 @@ function requiereDrive() {
 // ==========================================
 
 export async function obtenerCarpetaCursos() {
-  let folderId = localStorage.getItem("drive_folder_id");
+  let folderId = localStorage.getItem("drive_folder_raiz_id");
   if (folderId) return folderId;
   const q = encodeURIComponent(`name='${DRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
   const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, {
@@ -59,7 +59,43 @@ export async function obtenerCarpetaCursos() {
     const createData = await createRes.json();
     folderId = createData.id;
   }
-  localStorage.setItem("drive_folder_id", folderId);
+  localStorage.setItem("drive_folder_raiz_id", folderId);
+  return folderId;
+}
+
+// Busca (o crea) la subcarpeta de un curso específico dentro de la carpeta raíz,
+// para que cada curso tenga sus sesiones separadas en su propia carpeta.
+async function obtenerCarpetaDelCurso(slug, nombreCurso) {
+  const cacheKey = `drive_folder_curso_${slug}`;
+  let folderId = localStorage.getItem(cacheKey);
+  if (folderId) return folderId;
+
+  const raizId = await obtenerCarpetaCursos();
+  const nombreCarpeta = (nombreCurso || slug).replace(/'/g, "\\'");
+  const q = encodeURIComponent(
+    `name='${nombreCarpeta}' and mimeType='application/vnd.google-apps.folder' and '${raizId}' in parents and trashed=false`
+  );
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, {
+    headers: { Authorization: `Bearer ${driveAccessToken}` }
+  });
+  if (res.status === 401) throw new Error("Tu sesión de Drive expiró. Vuelve a conectar.");
+  const data = await res.json();
+  if (data.files && data.files.length > 0) {
+    folderId = data.files[0].id;
+  } else {
+    const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${driveAccessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: nombreCurso || slug,
+        mimeType: "application/vnd.google-apps.folder",
+        parents: [raizId]
+      })
+    });
+    const createData = await createRes.json();
+    folderId = createData.id;
+  }
+  localStorage.setItem(cacheKey, folderId);
   return folderId;
 }
 
@@ -100,13 +136,62 @@ export async function leerArchivoDrive(fileId) {
   return await res.text();
 }
 
-export async function guardarSesionEnDrive(slug, numSesion, contenidoMarkdown, fileIdExistente) {
+export async function guardarSesionEnDrive(slug, nombreCurso, numSesion, contenidoMarkdown, fileIdExistente) {
   requiereDrive();
   if (fileIdExistente) {
     await actualizarArchivoDrive(fileIdExistente, contenidoMarkdown);
     return fileIdExistente;
   }
-  const folderId = await obtenerCarpetaCursos();
-  const nombre = `${slug}_sesion_${numSesion}.md`;
+  const folderId = await obtenerCarpetaDelCurso(slug, nombreCurso);
+  const nombre = `sesion_${numSesion}.md`;
   return await crearArchivoDrive(nombre, contenidoMarkdown, folderId);
+}
+
+// Sube un archivo binario (PPTX, PDF, etc.) a una carpeta de Drive — usado por la
+// biblioteca del Reproductor PPT.
+export async function subirArchivoADrive(nombre, archivo, mimeType, folderId) {
+  requiereDrive();
+  const boundary = "biblioteca_boundary_" + Date.now();
+  const metadata = { name: nombre, parents: [folderId] };
+  const metadataPart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`;
+  const arrayBuffer = await archivo.arrayBuffer();
+  const filePartHeader = `--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`;
+  const closing = `\r\n--${boundary}--`;
+  const body = new Blob([metadataPart, filePartHeader, arrayBuffer, closing]);
+  const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${driveAccessToken}`, "Content-Type": `multipart/related; boundary=${boundary}` },
+    body
+  });
+  if (res.status === 401) throw new Error("Tu sesión de Drive expiró. Vuelve a conectar.");
+  if (!res.ok) throw new Error("Error subiendo archivo a Drive: " + (await res.text()).slice(0, 200));
+  const data = await res.json();
+  return data.id;
+}
+
+// Carpeta para la biblioteca de PPT/PDF importados (subcarpeta de la raíz).
+export async function obtenerCarpetaBiblioteca() {
+  const cacheKey = "drive_folder_biblioteca_ppt_id";
+  let folderId = localStorage.getItem(cacheKey);
+  if (folderId) return folderId;
+  const raizId = await obtenerCarpetaCursos();
+  const q = encodeURIComponent(`name='Biblioteca-PPT' and mimeType='application/vnd.google-apps.folder' and '${raizId}' in parents and trashed=false`);
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, {
+    headers: { Authorization: `Bearer ${driveAccessToken}` }
+  });
+  if (res.status === 401) throw new Error("Tu sesión de Drive expiró. Vuelve a conectar.");
+  const data = await res.json();
+  if (data.files && data.files.length > 0) {
+    folderId = data.files[0].id;
+  } else {
+    const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${driveAccessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Biblioteca-PPT", mimeType: "application/vnd.google-apps.folder", parents: [raizId] })
+    });
+    const createData = await createRes.json();
+    folderId = createData.id;
+  }
+  localStorage.setItem(cacheKey, folderId);
+  return folderId;
 }

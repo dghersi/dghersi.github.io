@@ -1,11 +1,11 @@
 import { db, doc, setDoc, getDoc, getDocs, deleteDoc, collection, poblarSelectCursos } from "../SetupJs/firebase-cliente.js";
 import { leerArchivoDrive, guardarSesionEnDrive } from "../SetupJs/drive.js";
 import { llamarIA, obtenerUltimoProveedor } from "../SetupJs/ia-cliente.js";
-import { generarImagen } from "../SetupJs/imagenes.js";
 import { parsearMarkdown, parsearCorrecciones, parsearExamenSolo, parsearDiapositivasSolo, reconstruirMarkdown } from "../FuncionesJs/parsers.js";
 import { construirPromptCorreccion, construirPromptExamenNuevo, construirPromptTopico } from "../FuncionesJs/prompts.js";
 import { formatearTexto } from "../FuncionesJs/formato.js";
 import { mostrarEstadoFooter } from "./estado.js";
+import { mostrarImagenConZoom } from "./zoom.js";
 
 // ==========================================
 // ESTADO DE LA SESIÓN ACTIVA (módulo)
@@ -181,7 +181,7 @@ async function regenerarTopico(topico, modeloElegido, modoElegido) {
     const resto = extraerRestoDelContenido();
     const contenidoCompleto = { diapositivas: todasLasDiapositivas, ...resto };
     const markdownNuevo = reconstruirMarkdown(contenidoCompleto);
-    driveFileIdActivo = await guardarSesionEnDrive(cursoActivoSlug, sesionActivaNum, markdownNuevo, driveFileIdActivo);
+    driveFileIdActivo = await guardarSesionEnDrive(cursoActivoSlug, cursoActivo.nombre_curso, sesionActivaNum, markdownNuevo, driveFileIdActivo);
 
     slideIdx = posicionInsercion;
     poblarSelectTopicos();
@@ -222,12 +222,14 @@ function renderSlide() {
 }
 
 // ---------- Funciones de renderizado, una por tipo de diapositiva ----------
+// La imagen (si existe) se muestra solo de lectura, con zoom al hacer clic — la
+// generación/edición de imágenes vive en su propia pantalla ("Imágenes" del menú).
 function renderTeoria(s, kicker, title, body, svgBox, imgBox) {
   kicker.textContent = "Teoría" + (s.topico ? ` · ${s.topico}` : "");
   title.textContent = s.titulo;
   body.innerHTML = formatearTexto(s.contenido);
   if (s.svg) svgBox.innerHTML = s.svg;
-  renderControlesImagen(imgBox, s, s.titulo);
+  if (s.imagen) mostrarImagenConZoom(imgBox, s.imagen);
 }
 
 function renderProblema(s, kicker, title, body, svgBox, imgBox) {
@@ -235,79 +237,7 @@ function renderProblema(s, kicker, title, body, svgBox, imgBox) {
   title.textContent = "Enunciado";
   body.innerHTML = formatearTexto(s.enunciado) + "<br><br><strong>— Solución —</strong><br>" + formatearTexto(s.solucion);
   if (s.svg) svgBox.innerHTML = s.svg;
-  renderControlesImagen(imgBox, s, s.enunciado.slice(0, 120));
-}
-
-// ---------- Generación de imágenes para una diapositiva/problema ----------
-// La imagen se guarda en su propio campo (slideObj.imagen), separado del texto,
-// para poder reemplazarla o quitarla sin tocar el contenido ni acumular copias.
-function renderControlesImagen(imgBox, slideObj, contexto) {
-  if (slideObj.imagen) {
-    const img = document.createElement("img");
-    img.src = slideObj.imagen;
-    img.style.cssText = "max-width:100%;border-radius:6px;display:block;margin-bottom:.5rem;";
-    imgBox.appendChild(img);
-  }
-
-  const btnGenerar = document.createElement("button");
-  btnGenerar.className = "secondary";
-  btnGenerar.textContent = slideObj.imagen ? "🔄 Regenerar imagen" : "🖼️ Generar imagen";
-  btnGenerar.addEventListener("click", () => generarImagenSlide(btnGenerar, slideObj, contexto));
-  imgBox.appendChild(btnGenerar);
-
-  if (slideObj.imagen) {
-    const btnQuitar = document.createElement("button");
-    btnQuitar.className = "secondary";
-    btnQuitar.textContent = "🗑️ Quitar imagen";
-    btnQuitar.style.marginLeft = ".5rem";
-    btnQuitar.addEventListener("click", () => quitarImagenSlide(slideObj));
-    imgBox.appendChild(btnQuitar);
-  }
-}
-
-async function guardarCambiosDeContenido() {
-  const todasLasDiapositivas = slidesActuales
-    .filter(sl => sl.tipo === "teoria")
-    .map(sl => ({ titulo: sl.titulo, topico: sl.topico, contenido: sl.contenido, svg: sl.svg, imagen: sl.imagen, modelo: sl.modelo, modo: sl.modo }));
-  const resto = extraerRestoDelContenido();
-  const contenidoCompleto = { diapositivas: todasLasDiapositivas, ...resto };
-  const markdownNuevo = reconstruirMarkdown(contenidoCompleto);
-  driveFileIdActivo = await guardarSesionEnDrive(cursoActivoSlug, sesionActivaNum, markdownNuevo, driveFileIdActivo);
-}
-
-async function generarImagenSlide(boton, slideObj, contexto) {
-  boton.disabled = true;
-  const original = boton.textContent;
-  boton.textContent = "Generando imagen…";
-  mostrarEstadoFooter("Generando imagen…");
-  try {
-    const prompt = `Diagrama educativo claro y simple, estilo ilustración técnica, fondo blanco, colores suaves, sin texto superpuesto: ${contexto}`;
-    const { dataUrl, proveedor } = await generarImagen(prompt, (texto) => mostrarEstadoFooter(texto));
-    slideObj.imagen = dataUrl;
-    await guardarCambiosDeContenido();
-    mostrarEstadoFooter(`Imagen generada con ${proveedor} y guardada`);
-    renderSlide();
-  } catch (err) {
-    alert("Error al generar imagen: " + err.message);
-    mostrarEstadoFooter("Error al generar imagen");
-  } finally {
-    boton.disabled = false;
-    boton.textContent = original;
-  }
-}
-
-async function quitarImagenSlide(slideObj) {
-  if (!confirm("¿Quitar esta imagen?")) return;
-  slideObj.imagen = "";
-  mostrarEstadoFooter("Quitando imagen…");
-  try {
-    await guardarCambiosDeContenido();
-    mostrarEstadoFooter("Imagen quitada y guardado");
-  } catch (err) {
-    alert("Error al guardar: " + err.message);
-    mostrarEstadoFooter("Error al quitar imagen");
-  }
-  renderSlide();
+  if (s.imagen) mostrarImagenConZoom(imgBox, s.imagen);
 }
 
 function renderCodigo(s, kicker, title, body) {

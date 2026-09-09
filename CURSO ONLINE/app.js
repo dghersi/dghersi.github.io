@@ -1,6 +1,9 @@
 import { initCrearCurso } from "./PaginasJs/crear-curso.js";
 import { initReproductor } from "./PaginasJs/reproductor.js";
 import { initChatIA } from "./PaginasJs/chat-ia.js";
+import { initGestionImagenes } from "./PaginasJs/gestion-imagenes.js";
+import { initExportacion } from "./PaginasJs/exportacion.js";
+import { initReproductorPPT } from "./PaginasJs/reproductor-ppt.js";
 
 // ==========================================
 // ORQUESTADOR GENERAL — navegación + arranque
@@ -20,3 +23,6 @@ document.querySelectorAll(".side-nav-item").forEach(btn => {
 initCrearCurso();
 initReproductor();
 initChatIA();
+initGestionImagenes();
+initExportacion();
+initReproductorPPT();

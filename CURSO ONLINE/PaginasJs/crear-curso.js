@@ -173,7 +173,7 @@ function initGenerarSesion() {
       const refSesion = doc(db, "cursos", slug, "sesiones", "sesion_" + numSesion);
       const existente = await getDoc(refSesion);
       const fileIdExistente = existente.exists() ? existente.data().drive_file_id : null;
-      const fileId = await guardarSesionEnDrive(slug, numSesion, markdown, fileIdExistente);
+      const fileId = await guardarSesionEnDrive(slug, curso.nombre_curso, numSesion, markdown, fileIdExistente);
       await setDoc(refSesion, {
         drive_file_id: fileId,
         drive_file_name: `${slug}_sesion_${numSesion}.md`,
@@ -250,7 +250,7 @@ function initGenerarTodas() {
         const markdown = await llamarIA(prompt);
         const existePointer = await getDoc(refSesion);
         const fileIdExistente = (regenerar && existePointer.exists()) ? existePointer.data().drive_file_id : null;
-        const fileIdFinal = await guardarSesionEnDrive(slug, s.numero, markdown, fileIdExistente);
+        const fileIdFinal = await guardarSesionEnDrive(slug, curso.nombre_curso, s.numero, markdown, fileIdExistente);
         await setDoc(refSesion, {
           drive_file_id: fileIdFinal,
           drive_file_name: `${slug}_sesion_${s.numero}.md`,
