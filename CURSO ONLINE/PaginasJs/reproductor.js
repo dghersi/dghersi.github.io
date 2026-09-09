@@ -17,9 +17,7 @@ let sesionActivaNum = "";
 let cursoActivo = null;
 let temaActivo = "";
 let driveFileIdActivo = null;
-let modeloUsadoActivo = null;   // "Gemini" | "Groq" | "Mistral" | "Auto" | null (sesiones viejas)
-let modoGeneradoActivo = null;  // "corto" | "largo" | "extenso" | null (sesiones viejas)
-let examenGuardado = null;      // { respuestas: [], correccion: [] } | null
+let examenGuardado = null; // { respuestas: [], correccion: [] } | null
 
 // ==========================================
 // ORQUESTADOR — pestaña "Reproductor"
@@ -31,6 +29,7 @@ export function initReproductor() {
 
   document.getElementById("selectCursoJugar").addEventListener("change", onCambioCursoJugar);
   document.getElementById("btnCargarSesion").addEventListener("click", onCargarSesion);
+  document.getElementById("btnRegenerarTopico").addEventListener("click", onRegenerarTopicoClick);
   document.getElementById("btnAnterior").addEventListener("click", () => {
     if (slideIdx > 0) { slideIdx--; renderSlide(); }
   });
@@ -81,8 +80,6 @@ async function onCargarSesion() {
     const sesionData = snap.data();
     const fileId = sesionData.drive_file_id;
     temaActivo = sesionData.tema || "";
-    modeloUsadoActivo = sesionData.modelo_usado || null;
-    modoGeneradoActivo = sesionData.modo_generado || null;
     driveFileIdActivo = fileId;
     if (!fileId) throw new Error("Esta sesión no tiene un archivo de Drive asociado (fue generada con una versión anterior de la app).");
     const markdown = await leerArchivoDrive(fileId);
@@ -101,6 +98,7 @@ async function onCargarSesion() {
     msg.className = "msg ok";
     mostrarEstadoFooter(`Sesión ${num} cargada`);
     actualizarResumenExamen();
+    poblarSelectTopicos();
     renderSlide();
   } catch (err) {
     msg.textContent = "Error: " + err.message; msg.className = "msg error";
@@ -120,14 +118,82 @@ function construirSlides(contenido) {
   return slides;
 }
 
-// Reconstruye {problemas, codigo, examen} a partir del estado actual en memoria
-// (para reconstruir el Markdown completo al regenerar solo la teoría).
+// Reconstruye {problemas, codigo, examen} a partir del estado actual en memoria.
 function extraerRestoDelContenido() {
   const problemas = slidesActuales.filter(s => s.tipo === "problema").map(s => ({ enunciado: s.enunciado, solucion: s.solucion, svg: s.svg }));
   const codigo = slidesActuales.filter(s => s.tipo === "codigo").map(s => ({ problema_ref: s.problema_ref, codigo: s.codigo }));
   const examenSlide = slidesActuales.find(s => s.tipo === "examen");
   const examen = examenSlide ? { preguntas: examenSlide.preguntas, tiempo_estimado_min: examenSlide.tiempo } : null;
   return { problemas, codigo, examen };
+}
+
+// ---------- Tópicos: listado único y regeneración ----------
+function poblarSelectTopicos() {
+  const select = document.getElementById("selectTopico");
+  const vistos = new Set();
+  const topicos = [];
+  slidesActuales.forEach(s => {
+    if (s.tipo === "teoria" && s.topico && !vistos.has(s.topico)) {
+      vistos.add(s.topico);
+      topicos.push(s.topico);
+    }
+  });
+  select.innerHTML = topicos.map(t => `<option value="${t.replace(/"/g, "&quot;")}">${t}</option>`).join("");
+  document.getElementById("bloqueRegenerarTopico").style.display = topicos.length > 0 ? "block" : "none";
+}
+
+async function onRegenerarTopicoClick() {
+  const topico = document.getElementById("selectTopico").value;
+  const modelo = document.getElementById("selectModeloTopico").value;
+  const modo = document.getElementById("selectModoTopico").value;
+  if (!topico) return;
+  await regenerarTopico(topico, modelo, modo);
+}
+
+// Reemplaza TODAS las diapositivas del tópico elegido (puede ser más de una) por
+// las nuevas que desarrolla la IA, reconstruye el Markdown completo y lo sube a Drive.
+async function regenerarTopico(topico, modeloElegido, modoElegido) {
+  const boton = document.getElementById("btnRegenerarTopico");
+  const original = boton.textContent;
+  boton.disabled = true;
+  boton.textContent = "Regenerando…";
+  mostrarEstadoFooter(`Regenerando tópico "${topico}" (${modoElegido})…`);
+  try {
+    const prompt = construirPromptTopico(cursoActivo, temaActivo, topico, modoElegido);
+    const proveedorForzado = modeloElegido && modeloElegido !== "Auto" ? modeloElegido : undefined;
+    const texto = await llamarIA(prompt, null, proveedorForzado);
+    const nuevasDelTopico = parsearDiapositivasSolo(texto);
+    const modeloReal = obtenerUltimoProveedor() || modeloElegido || "Auto";
+    const nuevasConMeta = nuevasDelTopico.map(d => ({ tipo: "teoria", ...d, topico, modelo: modeloReal, modo: modoElegido }));
+
+    const indices = slidesActuales
+      .map((s, i) => (s.tipo === "teoria" && s.topico === topico) ? i : -1)
+      .filter(i => i !== -1);
+    if (indices.length === 0) throw new Error("No se encontró ese tópico en la sesión actual.");
+    const posicionInsercion = indices[0];
+    indices.slice().reverse().forEach(i => slidesActuales.splice(i, 1));
+    slidesActuales.splice(posicionInsercion, 0, ...nuevasConMeta);
+
+    const todasLasDiapositivas = slidesActuales
+      .filter(sl => sl.tipo === "teoria")
+      .map(sl => ({ titulo: sl.titulo, topico: sl.topico, contenido: sl.contenido, svg: sl.svg, modelo: sl.modelo, modo: sl.modo }));
+    const resto = extraerRestoDelContenido();
+    const contenidoCompleto = { diapositivas: todasLasDiapositivas, ...resto };
+    const markdownNuevo = reconstruirMarkdown(contenidoCompleto);
+    driveFileIdActivo = await guardarSesionEnDrive(cursoActivoSlug, sesionActivaNum, markdownNuevo, driveFileIdActivo);
+
+    slideIdx = posicionInsercion;
+    poblarSelectTopicos();
+    document.getElementById("selectTopico").value = topico;
+    mostrarEstadoFooter("Tópico regenerado y guardado en Drive");
+    renderSlide();
+  } catch (err) {
+    alert("Error al regenerar el tópico: " + err.message);
+    mostrarEstadoFooter("Error al regenerar tópico");
+  } finally {
+    boton.disabled = false;
+    boton.textContent = original;
+  }
 }
 
 // ---------- Orquestador de render: decide qué función de tipo llamar ----------
@@ -138,8 +204,6 @@ function renderSlide() {
   const body = document.getElementById("slideBody");
   const svgBox = document.getElementById("slideSvg");
   svgBox.innerHTML = "";
-  const indicadoresPrevios = document.getElementById("slideIndicadores");
-  if (indicadoresPrevios) indicadoresPrevios.remove();
 
   if (s.tipo === "teoria") renderTeoria(s, kicker, title, body, svgBox);
   else if (s.tipo === "problema") renderProblema(s, kicker, title, body, svgBox);
@@ -156,85 +220,10 @@ function renderSlide() {
 
 // ---------- Funciones de renderizado, una por tipo de diapositiva ----------
 function renderTeoria(s, kicker, title, body, svgBox) {
-  kicker.textContent = "Teoría";
+  kicker.textContent = "Teoría" + (s.topico ? ` · ${s.topico}` : "");
   title.textContent = s.titulo;
   body.innerHTML = formatearTexto(s.contenido);
   if (s.svg) svgBox.innerHTML = s.svg;
-  renderIndicadoresDiapositiva(s);
-}
-
-// ---------- Indicadores de generación (Modelo/Modo) — por diapositiva/tópico ----------
-function renderIndicadoresDiapositiva(s) {
-  const viewer = document.getElementById("viewer");
-  const cont = document.createElement("div");
-  cont.className = "slide-indicadores";
-  cont.id = "slideIndicadores";
-  cont.innerHTML = `
-    <label>Modelo
-      <select id="selectModeloSlide">
-        <option value="Auto">Auto</option>
-        <option value="Gemini">Gemini</option>
-        <option value="Groq">Groq</option>
-        <option value="Mistral">Mistral</option>
-      </select>
-    </label>
-    <label>Modo
-      <select id="selectModoSlide">
-        <option value="corto">Corto (1-2)</option>
-        <option value="largo">Largo (3-5)</option>
-        <option value="extenso">Extenso (6-8)</option>
-      </select>
-    </label>
-    <button class="secondary" id="btnRegenerarTeoria" style="margin-top:0; padding:.15rem .5rem; font-size:.68rem;">Regenerar tópico</button>
-  `;
-  viewer.appendChild(cont);
-  document.getElementById("selectModeloSlide").value = s.modelo || modeloUsadoActivo || "Auto";
-  document.getElementById("selectModoSlide").value = s.modo || modoGeneradoActivo || "largo";
-  document.getElementById("btnRegenerarTeoria").addEventListener("click", () => {
-    const modelo = document.getElementById("selectModeloSlide").value;
-    const modo = document.getElementById("selectModoSlide").value;
-    regenerarTopico(modelo, modo);
-  });
-}
-
-// Desarrolla en profundidad SOLO el tópico de la diapositiva actual, expandiéndolo
-// a 1-8 diapositivas nuevas (reemplaza solo esa posición, el resto de topics y
-// el resto de la sesión no se tocan), reconstruye el Markdown completo y lo sube a Drive.
-async function regenerarTopico(modeloElegido, modoElegido) {
-  const idxActual = slideIdx;
-  const slideActual = slidesActuales[idxActual];
-  if (!slideActual || slideActual.tipo !== "teoria") return;
-  const cont = document.getElementById("slideIndicadores");
-  if (cont) cont.style.opacity = ".5";
-  mostrarEstadoFooter(`Regenerando tópico "${slideActual.titulo}" (${modoElegido})…`);
-  try {
-    const prompt = construirPromptTopico(cursoActivo, temaActivo, slideActual.titulo, modoElegido);
-    const proveedorForzado = modeloElegido && modeloElegido !== "Auto" ? modeloElegido : undefined;
-    const texto = await llamarIA(prompt, null, proveedorForzado);
-    const nuevasDelTopico = parsearDiapositivasSolo(texto);
-    const modeloReal = obtenerUltimoProveedor() || modeloElegido || "Auto";
-    const nuevasConMeta = nuevasDelTopico.map(d => ({ tipo: "teoria", ...d, modelo: modeloReal, modo: modoElegido }));
-
-    // Reemplaza SOLO esa diapositiva (ese tópico) por las nuevas, en su misma posición
-    slidesActuales.splice(idxActual, 1, ...nuevasConMeta);
-
-    // Reconstruye el Markdown completo con toda la teoría actual (topics viejos + nuevos) + el resto
-    const todasLasDiapositivas = slidesActuales
-      .filter(sl => sl.tipo === "teoria")
-      .map(sl => ({ titulo: sl.titulo, contenido: sl.contenido, svg: sl.svg, modelo: sl.modelo, modo: sl.modo }));
-    const resto = extraerRestoDelContenido();
-    const contenidoCompleto = { diapositivas: todasLasDiapositivas, ...resto };
-    const markdownNuevo = reconstruirMarkdown(contenidoCompleto);
-    driveFileIdActivo = await guardarSesionEnDrive(cursoActivoSlug, sesionActivaNum, markdownNuevo, driveFileIdActivo);
-
-    slideIdx = idxActual;
-    mostrarEstadoFooter("Tópico regenerado y guardado en Drive");
-    renderSlide();
-  } catch (err) {
-    alert("Error al regenerar el tópico: " + err.message);
-    mostrarEstadoFooter("Error al regenerar tópico");
-    if (cont) cont.style.opacity = "1";
-  }
 }
 
 function renderProblema(s, kicker, title, body, svgBox) {

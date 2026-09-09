@@ -26,7 +26,10 @@ export function parsearMarkdown(texto) {
     const cuerpo = sec.replace(/^##.*\n?/, "");
 
     if (/^Diapositiva/i.test(header)) {
-      const titulo = header.replace(/^Diapositiva\s*\d*:?\s*/i, "").trim();
+      const resto = header.replace(/^Diapositiva\s*\d*:?\s*/i, "").trim();
+      const topicoMatch = resto.match(/^\[(.+?)\]\s*(.*)$/);
+      const topico = topicoMatch ? topicoMatch[1].trim() : resto;
+      const titulo = topicoMatch ? topicoMatch[2].trim() : resto;
       let contenido = cuerpo, svg = "", modelo, modo;
       const metaMatch = contenido.match(/^<!--\s*gen:\s*modelo=(\S+)\s+modo=(\S+)\s*-->\n?/i);
       if (metaMatch) {
@@ -38,7 +41,7 @@ export function parsearMarkdown(texto) {
         svg = svgMatch[1].trim();
         contenido = contenido.replace(svgMatch[0], "").trim();
       }
-      diapositivas.push({ titulo, contenido: contenido.trim(), svg, ...(modelo && { modelo, modo }) });
+      diapositivas.push({ titulo, topico, contenido: contenido.trim(), svg, ...(modelo && { modelo, modo }) });
     } else if (/^Problema/i.test(header)) {
       let svg = "";
       let cuerpoLimpio = cuerpo;
@@ -135,7 +138,7 @@ export function reconstruirMarkdown(contenido) {
   const partes = [];
   (contenido.diapositivas || []).forEach((d, i) => {
     partes.push(
-      `## Diapositiva ${i + 1}: ${d.titulo}\n` +
+      `## Diapositiva ${i + 1}: [${d.topico || d.titulo}] ${d.titulo}\n` +
       (d.modelo && d.modo ? `<!-- gen: modelo=${d.modelo} modo=${d.modo} -->\n` : "") +
       `${d.contenido}` +
       (d.svg ? `\n\n\`\`\`svg\n${d.svg}\n\`\`\`` : "")

@@ -121,11 +121,11 @@
         </div>
         <label>Tema / temario de esta sesión (pega la línea del sílabo) *</label>
         <textarea id="temaSesion" required placeholder="ECUACIÓN GENERAL DE LA HIDROSTÁTICA. Estática de los fluidos..."></textarea>
-        <label>Modo</label>
+        <label>Modo de sesión</label>
         <select id="modoGenerar">
-          <option value="corto">Corto (1-2 diapositivas)</option>
-          <option value="largo" selected>Largo (3-5 diapositivas)</option>
-          <option value="extenso">Extenso (6-8 diapositivas, con ejemplos)</option>
+          <option value="corto">Corto (3 diapositivas por tópico)</option>
+          <option value="largo" selected>Largo (5 diapositivas por tópico)</option>
+          <option value="extenso">Extensivo (7 diapositivas por tópico, con ejemplos)</option>
         </select>
         <button class="primary" id="btnGenerar">Generar con IA</button>
         <p class="msg" id="msgGenerar"></p>
@@ -143,11 +143,11 @@
           Regenerar sesiones que ya existen (por defecto se saltan)
         </label>
         <p class="hint">Usa la "Lista completa de sesiones" guardada en el curso. El log de avance aparece en el panel derecho.</p>
-        <label>Modo (aplica a todas las sesiones del lote)</label>
+        <label>Modo de sesión (aplica a todas las sesiones del lote)</label>
         <select id="modoGenerarTodas">
-          <option value="corto">Corto (1-2 diapositivas)</option>
-          <option value="largo" selected>Largo (3-5 diapositivas)</option>
-          <option value="extenso">Extenso (6-8 diapositivas, con ejemplos)</option>
+          <option value="corto">Corto (3 diapositivas por tópico)</option>
+          <option value="largo" selected>Largo (5 diapositivas por tópico)</option>
+          <option value="extenso">Extensivo (7 diapositivas por tópico, con ejemplos)</option>
         </select>
         <button class="primary" id="btnGenerarTodas">Generar todas</button>
         <button class="secondary" id="btnDetenerTodas" style="display:none">Detener</button>
@@ -162,6 +162,32 @@
       <select id="selectSesionJugar"><option value="">— Selecciona un curso primero —</option></select>
       <button class="primary" id="btnCargarSesion">Cargar sesión</button>
       <p class="msg" id="msgReproductor"></p>
+
+      <fieldset id="bloqueRegenerarTopico" style="display:none">
+        <legend>Regenerar un tópico de esta sesión</legend>
+        <label>Tópico</label>
+        <select id="selectTopico"></select>
+        <div class="row">
+          <div>
+            <label>Modelo</label>
+            <select id="selectModeloTopico">
+              <option value="Auto">Auto</option>
+              <option value="Gemini">Gemini</option>
+              <option value="Groq">Groq</option>
+              <option value="Mistral">Mistral</option>
+            </select>
+          </div>
+          <div>
+            <label>Modo</label>
+            <select id="selectModoTopico">
+              <option value="corto">Corto (3 diapositivas)</option>
+              <option value="largo">Largo (5 diapositivas)</option>
+              <option value="extenso">Extensivo (7 diapositivas, con ejemplos)</option>
+            </select>
+          </div>
+        </div>
+        <button class="secondary" id="btnRegenerarTopico">Regenerar tópico</button>
+      </fieldset>
 
       <div class="card viewer" id="viewer" style="display:none">
         <div class="progressbar"><div class="progressbar-fill" id="progressFill" style="width:0%"></div></div>

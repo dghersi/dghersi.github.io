@@ -3,11 +3,10 @@
 // ==========================================
 
 export function construirPrompt(curso, numSesion, tema, modo = "largo") {
-  const config = {
-    corto: { rango: "entre 1 y 2", extra: "" },
-    largo: { rango: "entre 3 y 5", extra: "" },
-    extenso: { rango: "entre 6 y 8", extra: " Incluye al menos un ejemplo concreto dentro del contenido de cada diapositiva de teoría." }
-  }[modo] || { rango: "entre 3 y 5", extra: "" };
+  const porTopico = { corto: 3, largo: 5, extenso: 7 }[modo] || 5;
+  const extraEjemplos = modo === "extenso"
+    ? " Incorpora al menos un ejemplo concreto resuelto dentro de las diapositivas de cada tópico."
+    : "";
 
   return `Eres ${curso.rol_experto}. Vas a generar el material de estudio de UNA sesión de un curso, en formato Markdown limpio y legible (alguien lo podrá abrir directo en Google Drive o cualquier editor de texto).
 
@@ -23,21 +22,33 @@ Sesión número ${numSesion}. Tema de esta sesión (tal como aparece en el síla
 ${tema}
 """
 
+PASO 1: Antes de escribir diapositivas, identifica los tópicos naturales en los
+que se divide este tema (normalmente entre 2 y 5, según la complejidad — tú
+decides cuántos tiene este tema en particular).
+
+PASO 2: Para CADA tópico identificado, genera EXACTAMENTE ${porTopico} diapositivas
+que lo desarrollen en profundidad — ni una menos ni una más.${extraEjemplos} Todas las
+diapositivas de un mismo tópico deben llevar el MISMO nombre de tópico entre
+corchetes en su título, así: "## Diapositiva N: [Nombre del tópico] Subtítulo
+específico de esa diapositiva dentro del tópico".
+
 Devuelve EXCLUSIVAMENTE Markdown válido con esta estructura EXACTA de encabezados
 (nada de texto antes del primer encabezado ni después del último; las fórmulas LaTeX
 van con $...$ y backslash normal, sin escapar nada, ya que esto NO es JSON):
 
 # Sesión ${numSesion}: (título breve de la sesión)
 
-## Diapositiva 1: (título)
-(explicación clara del concepto)
+## Diapositiva 1: [Nombre del tópico 1] (subtítulo)
+(explicación clara de este aspecto del tópico)
 
 \`\`\`svg
 (código <svg>...</svg> simple si ayuda a entender; omite este bloque si no hace falta)
 \`\`\`
 
-## Diapositiva 2: (título)
-(repite "## Diapositiva N: título" hasta cubrir ${config.rango} diapositivas en total.${config.extra})
+(continúa "## Diapositiva N: [Nombre del tópico 1] Subtítulo" hasta completar
+EXACTAMENTE ${porTopico} diapositivas de ese tópico, luego pasa al siguiente tópico
+y repite el mismo proceso — EXACTAMENTE ${porTopico} diapositivas por cada tópico
+identificado — hasta cubrir todos los tópicos del tema)
 
 ## Problema 1
 
@@ -78,33 +89,32 @@ sección si el software es NINGUNO)
 (mismo número y orden que las preguntas del examen)`;
 }
 
-// Desarrolla en profundidad UN topico puntual (una diapositiva) de una sesión ya
-// generada, expandiéndolo a 1-8 diapositivas nuevas según el modo. El resto de
-// la sesión no se toca. Usado por el badge "Modelo/Modo" del reproductor.
+// Desarrolla en profundidad UN tópico puntual ya identificado en una sesión
+// existente, generando EXACTAMENTE N diapositivas nuevas para ese tópico (N según
+// el modo). El resto de tópicos, problemas, código y examen no se tocan.
 export function construirPromptTopico(curso, tema, tituloTopico, modo = "largo") {
-  const config = {
-    corto: { rango: "entre 1 y 2", extra: "" },
-    largo: { rango: "entre 3 y 5", extra: "" },
-    extenso: { rango: "entre 6 y 8", extra: " Incorpora ejemplos concretos resueltos dentro de estas diapositivas." }
-  }[modo] || { rango: "entre 3 y 5", extra: "" };
+  const cantidad = { corto: 3, largo: 5, extenso: 7 }[modo] || 5;
+  const extra = modo === "extenso" ? " Incorpora al menos un ejemplo concreto resuelto." : "";
 
   return `Eres ${curso.rol_experto}. Vas a desarrollar EN PROFUNDIDAD un solo tópico dentro de una sesión de un curso — no toda la sesión, solo este tópico puntual. El resto de los tópicos, los problemas, el código y el examen de esa sesión NO cambian — no los menciones ni los repitas.
 
 Tema general de la sesión: """${tema}"""
 Tópico específico a desarrollar: "${tituloTopico}"
 Idioma: ${curso.idioma}. Notación especial: ${curso.notacion_especial}.
-Cantidad de diapositivas pedida para desarrollar SOLO este tópico: ${config.rango}.${config.extra}
+Genera EXACTAMENTE ${cantidad} diapositivas que desarrollen este tópico — ni una menos ni una más.${extra}
 
-Devuelve EXCLUSIVAMENTE Markdown con esta estructura, repetida tantas veces como diapositivas necesites para desarrollar el tópico (fórmulas LaTeX con $...$ y backslash normal, sin escapar nada):
+Devuelve EXCLUSIVAMENTE Markdown con esta estructura, repetida EXACTAMENTE ${cantidad}
+veces (fórmulas LaTeX con $...$ y backslash normal, sin escapar nada):
 
-## Diapositiva 1: (título relacionado con "${tituloTopico}")
+## Diapositiva 1: (subtítulo específico dentro de "${tituloTopico}")
 (contenido)
 
 \`\`\`svg
 (opcional, código <svg>...</svg> si ayuda a entender; omite este bloque si no hace falta)
 \`\`\`
 
-(repite "## Diapositiva N: título" hasta completar ${config.rango} diapositivas en total, todas desarrollando el tópico "${tituloTopico}")`;
+(repite "## Diapositiva N: subtítulo" hasta completar EXACTAMENTE ${cantidad}
+diapositivas, todas desarrollando el tópico "${tituloTopico}")`;
 }
 
 export function construirPromptCorreccion(preguntas, respuestasAlumno) {
