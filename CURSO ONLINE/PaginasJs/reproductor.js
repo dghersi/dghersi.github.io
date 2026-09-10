@@ -215,6 +215,7 @@ function renderSlide() {
   else if (s.tipo === "clave") renderClave(s, kicker, title, body);
 
   document.getElementById("progressFill").style.width = `${((slideIdx + 1) / slidesActuales.length) * 100}%`;
+  document.getElementById("slideContador").textContent = `${slideIdx + 1} / ${slidesActuales.length}`;
   document.getElementById("btnAnterior").disabled = slideIdx === 0;
   document.getElementById("btnSiguiente").textContent = slideIdx === slidesActuales.length - 1 ? "Finalizar ✓" : "Siguiente →";
   if (window.MathJax) MathJax.typesetPromise([body]).catch(() => {});

@@ -41,6 +41,9 @@ legend { padding:0 .5rem; color:var(--muted); font-size:.85rem; }
 
 /* Visor: header / contenido / footer */
 .viewer-header { margin-bottom: 1.25rem; }
+.viewer-header-fila { display: flex; align-items: center; justify-content: space-between; }
+.slide-contador { font-size: .76rem; color: var(--muted); }
+.viewer .slide-contador { color: #6b6656; }
 .viewer-content { min-height: 160px; }
 .viewer-footer {
   display: flex; align-items: center; justify-content: space-between;
