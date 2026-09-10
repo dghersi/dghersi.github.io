@@ -126,6 +126,14 @@ ${instruccion}
 RESTRICCIONES:
 ${restricciones}
 
+RECORDATORIO FINAL — LO MÁS IMPORTANTE DE TODO ESTE PROMPT: antes de escribir tu
+respuesta, cuenta cuántos tópicos identificaste en el PASO 1. Por CADA UNO de esos
+tópicos debes generar EXACTAMENTE ${porTopico} diapositivas — ni una menos ni una
+más — sin importar cuánto rigor o extensión te haya pedido la instrucción de
+arriba. Si tienes 4 tópicos, el total de diapositivas de teoría debe ser
+4 × ${porTopico} = ${porTopico * 4} (ajusta la multiplicación según cuántos tópicos
+identificaste realmente). Verifica este conteo antes de continuar con los problemas.
+
 Devuelve EXCLUSIVAMENTE Markdown válido con esta estructura EXACTA de encabezados
 (nada de texto antes del primer encabezado ni después del último; las fórmulas LaTeX
 van con $...$ y backslash normal, sin escapar nada, ya que esto NO es JSON):
