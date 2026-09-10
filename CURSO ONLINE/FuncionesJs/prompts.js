@@ -57,9 +57,31 @@ export function plantillaPorDefecto() {
   };
 }
 
+// Identifica SOLO la lista de tópicos de un tema (sin desarrollar contenido) —
+// se usa en una llamada previa y separada, para que el modelo no tenga que
+// balancear "cuántos tópicos hay" contra el resto de instrucciones de rigor en
+// la misma respuesta larga (eso causaba que fusionara u omitiera tópicos).
+export function construirPromptListaTopicos(tema) {
+  return `Vas a analizar el siguiente tema de una sesión de un curso y dividirlo en una LISTA de tópicos independientes — NO desarrolles ningún contenido, solo lista los tópicos.
+
+Tema de la sesión:
+"""
+${tema}
+"""
+
+Reglas:
+- Cada concepto o elemento mencionado explícitamente en el tema debe aparecer como su propio tópico — no fusiones varios conceptos en uno solo, y no omitas ninguno (incluye laboratorios virtuales, herramientas, software o actividades prácticas si se mencionan explícitamente).
+- Usa nombres de tópico cortos y descriptivos (3-6 palabras).
+- Normalmente resultan entre 3 y 7 tópicos, dependiendo de cuántos elementos distintos tiene el tema — no agrupes de más para tener una lista corta.
+
+Devuelve EXCLUSIVAMENTE una lista numerada, un tópico por línea, sin explicaciones, títulos ni texto adicional antes o después:
+1. (nombre del tópico 1)
+2. (nombre del tópico 2)`;
+}
+
 // ---------- Prompt principal: generación completa de una sesión ----------
 
-export function construirPrompt(curso, numSesion, tema, modo = "largo", plantilla = null) {
+export function construirPrompt(curso, numSesion, tema, modo = "largo", plantilla = null, listaTopicos = null) {
   const p = plantilla || plantillaPorDefecto();
   const porTopico = { corto: 3, largo: 5, extenso: 7 }[modo] || 5;
   const rol = (p.rol || plantillaPorDefecto().rol).replace(/\{ROL_EXPERTO\}/g, curso.rol_experto);
@@ -110,7 +132,10 @@ Sesión número ${numSesion}. Tema de esta sesión (tal como aparece en el síla
 ${tema}
 """
 
-PASO 1: Antes de escribir diapositivas, identifica los tópicos naturales en los
+${listaTopicos && listaTopicos.length > 0
+  ? `Los tópicos de esta sesión YA fueron definidos de antemano — son estos ${listaTopicos.length}, en este orden exacto, y debes desarrollarlos TODOS, sin fusionar dos en uno, sin omitir ninguno y sin agregar tópicos que no estén en esta lista:
+${listaTopicos.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
+  : `PASO 1: Antes de escribir diapositivas, identifica los tópicos naturales en los
 que se divide este tema (normalmente entre 2 y 5, según la complejidad — tú
 decides cuántos tiene este tema en particular).
 
@@ -122,9 +147,9 @@ porque no encajen en el patrón teórico-matemático habitual. Para elementos no
 puramente teóricos (como un laboratorio virtual), desarrolla igualmente las
 diapositivas que le correspondan explicando su propósito pedagógico, qué
 experimentos o simulaciones ofrece, qué conceptos de la sesión permite verificar
-o practicar, y cómo se conecta con la teoría vista — nunca lo dejes fuera.
+o practicar, y cómo se conecta con la teoría vista — nunca lo dejes fuera.`}
 
-PASO 2: Para CADA tópico identificado, genera EXACTAMENTE ${porTopico} diapositivas
+PASO 2: Para CADA tópico ${listaTopicos && listaTopicos.length > 0 ? "de la lista de arriba" : "identificado"}, genera EXACTAMENTE ${porTopico} diapositivas
 que lo desarrollen en profundidad — ni una menos ni una más. Todas las
 diapositivas de un mismo tópico deben llevar el MISMO nombre de tópico entre
 corchetes en su título, así: "## Diapositiva N: [Nombre del tópico] Subtítulo
@@ -136,16 +161,15 @@ ${instruccion}
 RESTRICCIONES:
 ${restricciones}
 
-RECORDATORIO FINAL — LO MÁS IMPORTANTE DE TODO ESTE PROMPT: antes de escribir tu
-respuesta, (1) revisa que identificaste un tópico por CADA elemento mencionado en
-el tema de la sesión, sin fusionar ni omitir ninguno — incluyendo laboratorios,
-herramientas o actividades prácticas; y (2) cuenta cuántos tópicos identificaste
-en total. Por CADA UNO de esos tópicos debes generar EXACTAMENTE ${porTopico}
+RECORDATORIO FINAL — LO MÁS IMPORTANTE DE TODO ESTE PROMPT: ${listaTopicos && listaTopicos.length > 0
+  ? `debes desarrollar los ${listaTopicos.length} tópicos listados arriba, todos, en ese orden, sin fusionar ni omitir ninguno.`
+  : `antes de escribir tu respuesta, (1) revisa que identificaste un tópico por CADA elemento mencionado en el tema de la sesión, sin fusionar ni omitir ninguno — incluyendo laboratorios, herramientas o actividades prácticas; y (2) cuenta cuántos tópicos identificaste en total.`}
+Por CADA tópico debes generar EXACTAMENTE ${porTopico}
 diapositivas — ni una menos ni una más — sin importar cuánto rigor o extensión te
-haya pedido la instrucción de arriba. Si tienes 4 tópicos, el total de diapositivas
-de teoría debe ser 4 × ${porTopico} = ${porTopico * 4} (ajusta la multiplicación
-según cuántos tópicos identificaste realmente). Verifica ambas cosas antes de
-continuar con los problemas.
+haya pedido la instrucción de arriba. ${listaTopicos && listaTopicos.length > 0
+  ? `Con ${listaTopicos.length} tópicos, el total de diapositivas de teoría debe ser EXACTAMENTE ${listaTopicos.length} × ${porTopico} = ${listaTopicos.length * porTopico}.`
+  : `Si tienes 4 tópicos, el total de diapositivas de teoría debe ser 4 × ${porTopico} = ${porTopico * 4} (ajusta la multiplicación según cuántos tópicos identificaste realmente).`}
+Verifica esto antes de continuar con los problemas.
 
 Devuelve EXCLUSIVAMENTE Markdown válido con esta estructura EXACTA de encabezados
 (nada de texto antes del primer encabezado ni después del último; las fórmulas LaTeX

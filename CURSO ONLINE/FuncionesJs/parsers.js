@@ -12,6 +12,16 @@ export function extraerCampoMd(bloque, campo, siguientesCampos) {
   return m ? m[1].trim() : "";
 }
 
+// Parsea la lista de tópicos devuelta por construirPromptListaTopicos()
+// (formato "1. Nombre del tópico", uno por línea).
+export function parsearListaTopicos(texto) {
+  const topicos = [...texto.matchAll(/^\s*\d+\.\s*(.+)$/gm)].map(m => m[1].trim()).filter(Boolean);
+  if (topicos.length === 0) {
+    throw new Error("No se pudo extraer la lista de tópicos de la respuesta de la IA.");
+  }
+  return topicos;
+}
+
 // Convierte el Markdown con encabezados "## " en la estructura
 // {diapositivas, problemas, codigo, examen} que usa el reproductor.
 export function parsearMarkdown(texto) {
@@ -175,14 +185,37 @@ export function reconstruirMarkdown(contenido) {
   return partes.join("\n\n");
 }
 
-// Parsea la lista de sesiones del curso, formato "N | Tema" una por línea.
+// Separa "tema" y "tópicos" de un texto crudo, soportando la sintaxis extendida:
+// "Tema Central: XXXX | Topicos: Tópico 1 / Tópico 2 / Tópico 3". Si no trae
+// "| Topicos:", devuelve topicos: null (el texto completo se usa como tema tal cual).
+export function extraerTemaYTopicos(textoCrudo) {
+  let resto = (textoCrudo || "").trim();
+  let topicos = null;
+  const idxTopicos = resto.search(/\|\s*T[oó]picos\s*:/i);
+  if (idxTopicos !== -1) {
+    const parteTema = resto.slice(0, idxTopicos).trim();
+    const parteTopicos = resto.slice(idxTopicos).replace(/^\|\s*T[oó]picos\s*:\s*/i, "").trim();
+    resto = parteTema;
+    topicos = parteTopicos.split("/").map(t => t.trim()).filter(Boolean);
+    if (topicos.length === 0) topicos = null;
+  }
+  resto = resto.replace(/^Tema\s*Central\s*:\s*/i, "").trim();
+  return { tema: resto, topicos };
+}
+
+// Parsea la lista de sesiones del curso. Formato base: "N | Tema". Formato
+// extendido (recomendado): "N | Tema Central: XXXX | Topicos: T1 / T2 / T3" —
+// si trae tópicos predefinidos, se saltan por completo la identificación
+// automática por IA al generar (más rápido y 100% preciso).
 export function parsearListaSesiones(texto) {
   const lineas = texto.split("\n").map(l => l.trim()).filter(l => l.length > 0);
   const sesiones = [];
-  const regex = /^(?:sesi[oó]n\s*)?(\d+)\s*[\|:]\s*(.+)$/i;
+  const regex = /^(?:sesi[oó]n\s*)?(\d+)\s*\|\s*(.+)$/i;
   lineas.forEach(linea => {
     const m = linea.match(regex);
-    if (m) sesiones.push({ numero: m[1], tema: m[2].trim() });
+    if (!m) return;
+    const { tema, topicos } = extraerTemaYTopicos(m[2]);
+    sesiones.push({ numero: m[1], tema, topicos });
   });
   return sesiones;
 }

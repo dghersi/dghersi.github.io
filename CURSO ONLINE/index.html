@@ -143,9 +143,9 @@
         </div>
         <label>Notación especial</label>
         <input id="notacion_especial" placeholder="estándar del campo" />
-        <label>Lista completa de sesiones (una por línea, formato: N | Tema)</label>
-        <textarea id="lista_sesiones" class="mono" rows="10" placeholder="1 | LOS FLUIDOS. Definición de Mecánica de Fluidos...&#10;2 | PRESIÓN. Propiedades de la presión...&#10;3 | ECUACIÓN GENERAL DE LA HIDROSTÁTICA..."></textarea>
-        <p class="hint">Esta lista es solo para poder generar todas las sesiones de un clic (sección "Generar todas"). Si prefieres generar una por una, puedes dejarla vacía.</p>
+        <label>Lista completa de sesiones (una por línea)</label>
+        <textarea id="lista_sesiones" class="mono" rows="10" placeholder="1 | Tema Central: LOS FLUIDOS. Definición de Mecánica de Fluidos... | Topicos: Definición y ramas / Clases de fluidos y fluido perfecto / Densidad, peso y volumen específico / Elasticidad y viscosidad / Laboratorio virtual ALGETEC&#10;2 | PRESIÓN. Propiedades de la presión..."></textarea>
+        <p class="hint">Formato base: "N | Tema". Formato recomendado (evita que la IA tenga que adivinar los tópicos): "N | Tema Central: XXXX | Topicos: Tópico 1 / Tópico 2 / Tópico 3". Sin tópicos definidos, la app se los pide a la IA en una llamada aparte antes de generar.</p>
         <button class="primary" id="btnGuardarCurso">Guardar datos del curso</button>
         <p class="msg" id="msgCurso"></p>
       </fieldset>
@@ -189,7 +189,7 @@
           <div><label>Número de sesión *</label><input id="numSesion" type="number" min="1" placeholder="3" /></div>
         </div>
         <label>Tema / temario de esta sesión (pega la línea del sílabo) *</label>
-        <textarea id="temaSesion" required placeholder="ECUACIÓN GENERAL DE LA HIDROSTÁTICA. Estática de los fluidos..."></textarea>
+        <textarea id="temaSesion" required placeholder="ECUACIÓN GENERAL DE LA HIDROSTÁTICA. Estática de los fluidos... (opcional: agrega | Topicos: T1 / T2 / T3 al final para definirlos tú mismo)"></textarea>
         <label>Modo de sesión</label>
         <select id="modoGenerar">
           <option value="corto">Corto (3 diapositivas por tópico)</option>

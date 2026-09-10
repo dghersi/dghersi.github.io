@@ -1,8 +1,8 @@
 import { db, doc, setDoc, getDoc, getDocs, collection, poblarSelectCursos } from "../SetupJs/firebase-cliente.js";
 import { iniciarTokenClient, solicitarAccesoDrive, guardarSesionEnDrive } from "../SetupJs/drive.js";
 import { llamarIA, obtenerUltimoProveedor } from "../SetupJs/ia-cliente.js";
-import { construirPrompt } from "../FuncionesJs/prompts.js";
-import { parsearListaSesiones } from "../FuncionesJs/parsers.js";
+import { construirPrompt, construirPromptListaTopicos } from "../FuncionesJs/prompts.js";
+import { parsearListaSesiones, parsearListaTopicos, extraerTemaYTopicos } from "../FuncionesJs/parsers.js";
 import { mostrarEstadoFooter, actualizarPillDrive, actualizarPillIA } from "./estado.js";
 
 // ==========================================
@@ -267,7 +267,17 @@ function initGenerarSesion() {
       const cursoSnap = await getDoc(doc(db, "cursos", slug));
       if (!cursoSnap.exists()) throw new Error("Curso no encontrado.");
       const curso = cursoSnap.data();
-      const prompt = construirPrompt(curso, numSesion, tema, modo, plantilla);
+
+      const { tema: temaLimpio, topicos: topicosPredefinidos } = extraerTemaYTopicos(tema);
+      let listaTopicos = topicosPredefinidos;
+      if (!listaTopicos) {
+        msg.textContent = "Identificando tópicos…"; msg.className = "msg";
+        const textoTopicos = await llamarIA(construirPromptListaTopicos(temaLimpio));
+        listaTopicos = parsearListaTopicos(textoTopicos);
+      }
+      msg.textContent = `${listaTopicos.length} tópicos — generando contenido…`;
+
+      const prompt = construirPrompt(curso, numSesion, temaLimpio, modo, plantilla, listaTopicos);
       const resultado = await llamarIA(prompt, (texto) => { msg.textContent = texto; });
 
       if (plantilla.modo_destino === "externo") {
@@ -283,7 +293,7 @@ function initGenerarSesion() {
         await setDoc(refSesion, {
           drive_file_id: fileId,
           drive_file_name: `sesion_${numSesion}.md`,
-          tema, fecha_generacion: new Date().toISOString(),
+          tema: temaLimpio, fecha_generacion: new Date().toISOString(),
           modelo_usado: obtenerUltimoProveedor() || "Auto",
           modo_generado: modo
         });
@@ -362,9 +372,16 @@ function initGenerarTodas() {
           continue;
         }
       }
-      logLinea(`Sesión ${s.numero}: generando…`);
+      logLinea(`Sesión ${s.numero}: preparando…`);
       try {
-        const prompt = construirPrompt(curso, s.numero, s.tema, modo, plantilla);
+        let listaTopicos = s.topicos;
+        if (!listaTopicos) {
+          logLinea(`Sesión ${s.numero}: identificando tópicos…`);
+          const textoTopicos = await llamarIA(construirPromptListaTopicos(s.tema));
+          listaTopicos = parsearListaTopicos(textoTopicos);
+        }
+        logLinea(`Sesión ${s.numero}: ${listaTopicos.length} tópicos — generando contenido…`);
+        const prompt = construirPrompt(curso, s.numero, s.tema, modo, plantilla, listaTopicos);
         const resultado = await llamarIA(prompt);
 
         if (modoDestino === "externo") {
