@@ -114,6 +114,16 @@ PASO 1: Antes de escribir diapositivas, identifica los tópicos naturales en los
 que se divide este tema (normalmente entre 2 y 5, según la complejidad — tú
 decides cuántos tiene este tema en particular).
 
+IMPORTANTE — cobertura completa: revisa el tema de la sesión y asegúrate de que
+CADA concepto o elemento mencionado explícitamente (incluyendo referencias a
+laboratorios virtuales, herramientas, software o actividades prácticas) tenga su
+propio tópico dedicado — no los omitas ni los fusiones dentro de otro tópico solo
+porque no encajen en el patrón teórico-matemático habitual. Para elementos no
+puramente teóricos (como un laboratorio virtual), desarrolla igualmente las
+diapositivas que le correspondan explicando su propósito pedagógico, qué
+experimentos o simulaciones ofrece, qué conceptos de la sesión permite verificar
+o practicar, y cómo se conecta con la teoría vista — nunca lo dejes fuera.
+
 PASO 2: Para CADA tópico identificado, genera EXACTAMENTE ${porTopico} diapositivas
 que lo desarrollen en profundidad — ni una menos ni una más. Todas las
 diapositivas de un mismo tópico deben llevar el MISMO nombre de tópico entre
@@ -127,12 +137,15 @@ RESTRICCIONES:
 ${restricciones}
 
 RECORDATORIO FINAL — LO MÁS IMPORTANTE DE TODO ESTE PROMPT: antes de escribir tu
-respuesta, cuenta cuántos tópicos identificaste en el PASO 1. Por CADA UNO de esos
-tópicos debes generar EXACTAMENTE ${porTopico} diapositivas — ni una menos ni una
-más — sin importar cuánto rigor o extensión te haya pedido la instrucción de
-arriba. Si tienes 4 tópicos, el total de diapositivas de teoría debe ser
-4 × ${porTopico} = ${porTopico * 4} (ajusta la multiplicación según cuántos tópicos
-identificaste realmente). Verifica este conteo antes de continuar con los problemas.
+respuesta, (1) revisa que identificaste un tópico por CADA elemento mencionado en
+el tema de la sesión, sin fusionar ni omitir ninguno — incluyendo laboratorios,
+herramientas o actividades prácticas; y (2) cuenta cuántos tópicos identificaste
+en total. Por CADA UNO de esos tópicos debes generar EXACTAMENTE ${porTopico}
+diapositivas — ni una menos ni una más — sin importar cuánto rigor o extensión te
+haya pedido la instrucción de arriba. Si tienes 4 tópicos, el total de diapositivas
+de teoría debe ser 4 × ${porTopico} = ${porTopico * 4} (ajusta la multiplicación
+según cuántos tópicos identificaste realmente). Verifica ambas cosas antes de
+continuar con los problemas.
 
 Devuelve EXCLUSIVAMENTE Markdown válido con esta estructura EXACTA de encabezados
 (nada de texto antes del primer encabezado ni después del último; las fórmulas LaTeX
