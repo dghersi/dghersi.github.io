@@ -1,0 +1,160 @@
+:root {
+  --bg-color: #F4F6F7;
+  --card-bg: #FFFFFF;
+  --primary: #1B2631;
+  --accent: #2980B9;
+  --success: #2ECC71;
+  --danger: #E74C3C;
+  --warning: #F39C12;
+  --text-main: #2C3E50;
+  --border: #D5D8DC;
+}
+
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+  font-family: system-ui, -apple-system, sans-serif; 
+}
+
+body { 
+  background-color: var(--bg-color); 
+  color: var(--text-main); 
+  padding-bottom: 80px; 
+}
+
+.app-header {
+  position: sticky; 
+  top: 0; 
+  z-index: 100;
+  background-color: var(--primary); 
+  color: #FFF;
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  padding: 12px 16px; 
+  border-bottom: 3px solid var(--accent);
+}
+
+.brand { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+}
+
+.brand .icon { font-size: 24px; }
+.brand h1 { font-size: 14px; font-weight: bold; }
+.brand small { font-size: 10px; color: #BDC3C7; }
+
+.status-badge { 
+  font-size: 11px; 
+  font-weight: bold; 
+  padding: 4px 8px; 
+  border-radius: 12px; 
+}
+.status-badge.online { background-color: #1E8449; color: #FFF; }
+.status-badge.offline { background-color: #C0392B; color: #FFF; }
+
+.progress-container { 
+  background-color: #E5E8E8; 
+  height: 22px; 
+  position: relative; 
+}
+.progress-bar { 
+  background-color: var(--accent); 
+  height: 100%; 
+  transition: width 0.3s ease; 
+  width: 0%; 
+}
+.progress-text { 
+  position: absolute; 
+  width: 100%; 
+  text-align: center; 
+  top: 3px; 
+  font-size: 11px; 
+  font-weight: bold; 
+  color: #1B2631; 
+}
+
+.app-content { 
+  padding: 12px; 
+  max-width: 600px; 
+  margin: 0 auto; 
+}
+
+.card {
+  background: var(--card-bg); 
+  border-radius: 8px; 
+  padding: 14px;
+  margin-bottom: 12px; 
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.card h2 { 
+  font-size: 14px; 
+  color: var(--primary); 
+  margin-bottom: 10px; 
+}
+
+.form-group { margin-bottom: 10px; }
+.form-group label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; }
+.form-group input, .form-group select {
+  width: 100%; 
+  padding: 10px; 
+  font-size: 13px;
+  border: 1px solid var(--border); 
+  border-radius: 6px; 
+  background: #FAFAFA;
+}
+
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+
+.item-card { border-left: 5px solid var(--accent); margin-bottom: 10px; }
+.item-card.crit-ALTO { border-left-color: var(--danger); background-color: #FDF2E9; }
+
+.item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.item-num { background: var(--primary); color: #FFF; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
+.item-crit { font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
+.item-crit.ALTO { background: #FADBD8; color: #C0392B; }
+.item-crit.MEDIO { background: #FCF3CF; color: #D35400; }
+
+.item-desc { font-size: 12px; font-weight: 500; color: #2C3E50; margin-bottom: 10px; line-height: 1.3; }
+
+.touch-options { display: flex; gap: 8px; }
+.touch-btn {
+  flex: 1; 
+  padding: 12px 0; 
+  font-size: 12px; 
+  font-weight: bold;
+  border: 1px solid var(--border); 
+  border-radius: 6px; 
+  background: #EAECEE;
+  color: var(--text-main); 
+  text-align: center; 
+  cursor: pointer;
+}
+.touch-btn.active-SI { background-color: var(--success) !important; color: #FFF !important; }
+.touch-btn.active-NO { background-color: var(--danger) !important; color: #FFF !important; }
+.touch-btn.active-NA { background-color: #7F8C8D !important; color: #FFF !important; }
+
+.loto-banner {
+  background-color: var(--danger); 
+  color: #FFF; 
+  font-weight: bold;
+  font-size: 12px; 
+  text-align: center; 
+  padding: 10px; 
+  border-radius: 6px; 
+  margin-bottom: 12px;
+}
+
+#sig-canvas { border: 1px dashed var(--border); border-radius: 6px; width: 100%; height: 120px; background: #FAFAFA; }
+.gps-info { font-size: 10px; margin-top: 8px; color: #7F8C8D; display: flex; flex-direction: column; gap: 2px; }
+
+.btn { padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+.btn-primary { background-color: #27AE60; color: #FFF; font-size: 14px; }
+.btn-secondary { background-color: #95A5A6; color: #FFF; font-size: 11px; margin-top: 6px; }
+.btn-block { width: 100%; }
+.hidden { display: none !important; }

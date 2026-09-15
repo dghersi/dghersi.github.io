@@ -3,15 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Checklist Pre-Operacional | Flota de Maquinaria</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Checklist Pre-Operacional | Flota Maquinaria</title>
+  
+  <!-- Estilos desde la carpeta dedicada -->
+  <link rel="stylesheet" href="Estilos/Estilos.css">
   <meta name="theme-color" content="#1B2631">
   
   <!-- SDKs de Firebase (Compatibilidad CDN) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   
-  <!-- Generador de PDF en Cliente -->
+  <!-- Motor jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -22,7 +24,7 @@
       <span class="icon">🚜</span>
       <div>
         <h1>SISTEMA DE INSPECCIÓN</h1>
-        <small id="app-subtitle">Clase 1: Movimiento de Tierras</small>
+        <small>Clase 1: Movimiento de Tierras</small>
       </div>
     </div>
     <div id="net-status" class="status-badge online">📡 ONLINE</div>
@@ -30,13 +32,13 @@
 
   <!-- Barra de Progreso Dinámica -->
   <div class="progress-container">
-    <div id="progress-bar" class="progress-bar" style="width: 0%;"></div>
+    <div id="progress-bar" class="progress-bar"></div>
     <span id="progress-text" class="progress-text">Progreso: 0/27 (0%)</span>
   </div>
 
   <main class="app-content">
 
-    <!-- Card Metadatos Multi-Equipo -->
+    <!-- Card Metadatos -->
     <section class="card meta-card">
       <h2>📋 Datos de Inspección</h2>
       
@@ -46,15 +48,12 @@
           <option value="Minicargador">Minicargador (SSL / CTL)</option>
           <option value="Excavadora">Excavadora Hidráulica</option>
           <option value="Cargador Frontal">Cargador Frontal</option>
-          <option value="Retroexcavadora">Retroexcavadora</option>
-          <option value="Motoniveladora">Motoniveladora</option>
-          <option value="Tractor de Oruga">Tractor de Oruga (Bulldozer)</option>
         </select>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label>Código / Código Equipo</label>
+          <label>Código Equipo</label>
           <input type="text" id="input-codigo-equipo" placeholder="Ej: MIN-001">
         </div>
         <div class="form-group">
@@ -83,30 +82,24 @@
       </div>
     </section>
 
-    <!-- Banner LOTO Dinámico -->
+    <!-- Banner LOTO -->
     <div id="loto-banner" class="loto-banner hidden">
       ⚠️ ALERTA LOTO: EQUIPO FUERA DE SERVICIO (NO APTO PARA OPERAR)
     </div>
 
-    <!-- Contenedor Dinámico de Tarjetas (27 Ítems) -->
-    <section id="checklist-cards-container">
-      <!-- Generado dinámicamente -->
-    </section>
+    <!-- Contenedor Dinámico del Checklist -->
+    <section id="checklist-cards-container"></section>
 
-    <!-- Card Evidencia Fotográfica Base64 (LOTO) -->
+    <!-- Card Evidencia Fotográfica (LOTO) -->
     <section id="photo-section" class="card photo-card hidden">
       <h2>📷 Evidencia Fotográfica Obligatoria (LOTO)</h2>
       <p>Se ha detectado un hallazgo crítico. Tome la foto de la falla:</p>
       <input type="file" id="camera-input" accept="image/*" capture="environment">
-      <div id="photo-preview-container" class="photo-preview-container hidden">
-        <img id="photo-preview" src="" alt="Vista previa de la falla">
-      </div>
     </section>
 
     <!-- Card Firma Digital & GPS -->
     <section class="card signature-card">
       <h2>✍️ Firma Digital de Conformidad</h2>
-      <p>Dibuje su firma táctil en el recuadro:</p>
       <canvas id="sig-canvas" width="300" height="120"></canvas>
       <button type="button" id="clear-sig-btn" class="btn btn-secondary">Borrar Firma</button>
       
@@ -116,7 +109,7 @@
       </div>
     </section>
 
-    <!-- Botón Principal de Envío -->
+    <!-- Botón de Envío -->
     <div class="action-bar">
       <button type="button" id="submit-btn" class="btn btn-primary btn-block">
         SINCRONIZAR A FIREBASE Y GENERAR REPORTE PDF 📲
@@ -125,6 +118,12 @@
 
   </main>
 
+  <!-- Módulos vinculados respetando tu estructura exacta -->
+  <script src="SetupJs/Firebase.js"></script>
+  <script src="Data/minicargador.js"></script>
+  <script src="Core/loto-engine.js"></script>
+  <script src="Core/Plugins.js"></script>
+  <script src="Core/pdf-generator.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
