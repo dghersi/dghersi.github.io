@@ -1,11 +1,11 @@
 // Configuración de Firebase (Plan Spark Gratuito)
 const firebaseConfig = {
-  apiKey: "TU_API_KEY_AQUI",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  projectId: "tu-proyecto",
-  storageBucket: "tu-proyecto.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123def456"
+  apiKey: "AIzaSyBu54-gCkbroy2rzYyWm-wR8kZzDM_H9vk",
+  authDomain: "gestion-maquinaria-pwa.firebaseapp.com",
+  projectId: "gestion-maquinaria-pwa",
+  storageBucket: "gestion-maquinaria-pwa.firebasestorage.app",
+  messagingSenderId: "809833022067",
+  appId: "1:809833022067:web:447d9e1c8f2957faac6006"
 };
 
 // Inicializar Firebase
