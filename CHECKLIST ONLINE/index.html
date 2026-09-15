@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Checklist Pre-Operacional | Minicargador</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1B2631">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+  <!-- jsPDF Generator -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Header Fijo PWA -->
+  <header class="app-header">
+    <div class="brand">
+      <span class="icon">🚜</span>
+      <div>
+        <h1>MINICARGADOR</h1>
+        <small>CHK-MINI-01 | v4.0</small>
+      </div>
+    </div>
+    <div id="net-status" class="status-badge online">📡 ONLINE</div>
+  </header>
+
+  <!-- Barra de Progreso Dinámica -->
+  <div class="progress-container">
+    <div id="progress-bar" class="progress-bar" style="width: 0%;"></div>
+    <span id="progress-text" class="progress-text">Progreso: 0/27 (0%)</span>
+  </div>
+
+  <main class="app-content">
+
+    <!-- Card Metadatos -->
+    <section class="card meta-card">
+      <h2>📋 Datos de Inspección</h2>
+      <div class="form-group">
+        <label>Proyecto / Obra</label>
+        <input type="text" id="input-proyecto" placeholder="Ej: Obra Vía Central">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Horómetro</label>
+          <input type="number" id="input-horometro" placeholder="1250.5">
+        </div>
+        <div class="form-group">
+          <label>Turno</label>
+          <select id="input-turno">
+            <option value="Día">Día</option>
+            <option value="Noche">Noche</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Nombre del Operador</label>
+        <input type="text" id="input-operador" placeholder="Nombre Apellido">
+      </div>
+    </section>
+
+    <!-- Banner LOTO Dinámico -->
+    <div id="loto-banner" class="loto-banner hidden">
+      ⚠️ ALERTA LOTO: EQUIPO FUERA DE SERVICIO (NO APTO PARA OPERAR)
+    </div>
+
+    <!-- Contenedor Dinámico de Tarjetas del Checklist -->
+    <section id="checklist-cards-container">
+      <!-- Generado dinámicamente mediante app.js -->
+    </section>
+
+    <!-- Card Evidencia Fotográfica (Se activa ante falla ALTA) -->
+    <section id="photo-section" class="card photo-card hidden">
+      <h2>📷 Evidencia Fotográfica Obligatoria (LOTO)</h2>
+      <p>Se ha detectado una falla crítica. Tome una foto del hallazgo:</p>
+      <input type="file" id="camera-input" accept="image/*" capture="environment">
+      <div id="photo-preview" class="photo-preview"></div>
+    </section>
+
+    <!-- Card Firma Digital & GPS -->
+    <section class="card signature-card">
+      <h2>✍️ Firma Digital de Conformidad</h2>
+      <p>Dibuje su firma táctil en el recuadro:</p>
+      <canvas id="sig-canvas" width="300" height="120"></canvas>
+      <button type="button" id="clear-sig-btn" class="btn btn-secondary">Borrar Firma</button>
+      
+      <div class="gps-info">
+        <span>📍 Ubicación GPS: <strong id="gps-coords">Obteniendo...</strong></span>
+        <span>🕒 Fecha/Hora: <strong id="timestamp">--/--/---- --:--</strong></span>
+      </div>
+    </section>
+
+    <!-- Botón Principal de Envío -->
+    <div class="action-bar">
+      <button type="button" id="submit-btn" class="btn btn-primary btn-block">
+        ENVIAR CHECKLIST Y GENERAR REPORTE PDF 📲
+      </button>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
