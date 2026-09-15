@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Checklist Pre-Operacional | Minicargador</title>
+  <title>Checklist Pre-Operacional | Flota de Maquinaria</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1B2631">
-  <!-- Firebase SDKs -->
+  
+  <!-- SDKs de Firebase (Compatibilidad CDN) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-  <!-- jsPDF Generator -->
+  
+  <!-- Generador de PDF en Cliente -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -21,8 +21,8 @@
     <div class="brand">
       <span class="icon">🚜</span>
       <div>
-        <h1>MINICARGADOR</h1>
-        <small>CHK-MINI-01 | v4.0</small>
+        <h1>SISTEMA DE INSPECCIÓN</h1>
+        <small id="app-subtitle">Clase 1: Movimiento de Tierras</small>
       </div>
     </div>
     <div id="net-status" class="status-badge online">📡 ONLINE</div>
@@ -36,17 +36,37 @@
 
   <main class="app-content">
 
-    <!-- Card Metadatos -->
+    <!-- Card Metadatos Multi-Equipo -->
     <section class="card meta-card">
       <h2>📋 Datos de Inspección</h2>
+      
       <div class="form-group">
-        <label>Proyecto / Obra</label>
-        <input type="text" id="input-proyecto" placeholder="Ej: Obra Vía Central">
+        <label>Tipo de Maquinaria</label>
+        <select id="input-tipo-equipo">
+          <option value="Minicargador">Minicargador (SSL / CTL)</option>
+          <option value="Excavadora">Excavadora Hidráulica</option>
+          <option value="Cargador Frontal">Cargador Frontal</option>
+          <option value="Retroexcavadora">Retroexcavadora</option>
+          <option value="Motoniveladora">Motoniveladora</option>
+          <option value="Tractor de Oruga">Tractor de Oruga (Bulldozer)</option>
+        </select>
       </div>
+
       <div class="form-row">
+        <div class="form-group">
+          <label>Código / Código Equipo</label>
+          <input type="text" id="input-codigo-equipo" placeholder="Ej: MIN-001">
+        </div>
         <div class="form-group">
           <label>Horómetro</label>
           <input type="number" id="input-horometro" placeholder="1250.5">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Proyecto / Obra</label>
+          <input type="text" id="input-proyecto" placeholder="Ej: Obra Vía Central">
         </div>
         <div class="form-group">
           <label>Turno</label>
@@ -56,9 +76,10 @@
           </select>
         </div>
       </div>
+
       <div class="form-group">
         <label>Nombre del Operador</label>
-        <input type="text" id="input-operador" placeholder="Nombre Apellido">
+        <input type="text" id="input-operador" placeholder="Nombre y Apellido">
       </div>
     </section>
 
@@ -67,17 +88,19 @@
       ⚠️ ALERTA LOTO: EQUIPO FUERA DE SERVICIO (NO APTO PARA OPERAR)
     </div>
 
-    <!-- Contenedor Dinámico de Tarjetas del Checklist -->
+    <!-- Contenedor Dinámico de Tarjetas (27 Ítems) -->
     <section id="checklist-cards-container">
-      <!-- Generado dinámicamente mediante app.js -->
+      <!-- Generado dinámicamente -->
     </section>
 
-    <!-- Card Evidencia Fotográfica (Se activa ante falla ALTA) -->
+    <!-- Card Evidencia Fotográfica Base64 (LOTO) -->
     <section id="photo-section" class="card photo-card hidden">
       <h2>📷 Evidencia Fotográfica Obligatoria (LOTO)</h2>
-      <p>Se ha detectado una falla crítica. Tome una foto del hallazgo:</p>
+      <p>Se ha detectado un hallazgo crítico. Tome la foto de la falla:</p>
       <input type="file" id="camera-input" accept="image/*" capture="environment">
-      <div id="photo-preview" class="photo-preview"></div>
+      <div id="photo-preview-container" class="photo-preview-container hidden">
+        <img id="photo-preview" src="" alt="Vista previa de la falla">
+      </div>
     </section>
 
     <!-- Card Firma Digital & GPS -->
@@ -88,7 +111,7 @@
       <button type="button" id="clear-sig-btn" class="btn btn-secondary">Borrar Firma</button>
       
       <div class="gps-info">
-        <span>📍 Ubicación GPS: <strong id="gps-coords">Obteniendo...</strong></span>
+        <span>📍 GPS: <strong id="gps-coords">Obteniendo...</strong></span>
         <span>🕒 Fecha/Hora: <strong id="timestamp">--/--/---- --:--</strong></span>
       </div>
     </section>
@@ -96,7 +119,7 @@
     <!-- Botón Principal de Envío -->
     <div class="action-bar">
       <button type="button" id="submit-btn" class="btn btn-primary btn-block">
-        ENVIAR CHECKLIST Y GENERAR REPORTE PDF 📲
+        SINCRONIZAR A FIREBASE Y GENERAR REPORTE PDF 📲
       </button>
     </div>
 
