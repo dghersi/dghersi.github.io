@@ -73,3 +73,23 @@ const minicargadorData = [
     ]
   }
 ];
+
+// Data/Minicargador/minicargador.js - Configuración Específica
+const CLOUD_BASE = "https://res.cloudinary.com/ovirred3/image/upload/Checklists_PWA/Assets/Minicargador";
+
+export const minicargadorData = {
+  id: "minicargador",
+  nombre: "Minicargador Frontal",
+  assets: {
+    anatomiaUrl: `${CLOUD_BASE}/anatomia.png`,
+    zonificacionUrl: `${CLOUD_BASE}/zonificacion.png`,
+    buenasPracticas: [
+      `${CLOUD_BASE}/bp-1.jpg`,
+      `${CLOUD_BASE}/bp-2.jpg`,
+      `${CLOUD_BASE}/bp-3.jpg`,
+      `${CLOUD_BASE}/bp-4.jpg`,
+      `${CLOUD_BASE}/bp-5.jpg`,
+      `${CLOUD_BASE}/bp-6.jpg`
+    ]
+  }
+};

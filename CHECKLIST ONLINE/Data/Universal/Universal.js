@@ -26,3 +26,9 @@ const universalChecklist = {
     "EQUIPO APTO Y OPERATIVO"
   ]
 };
+
+// Data/Universal/universal.js - Recursos Compartidos
+export const UNIVERSAL_ASSETS = {
+  extintorUrl: "https://res.cloudinary.com/ovirred3/image/upload/Checklists_PWA/Assets/Universal/extintor.jpg",
+  botiquinUrl: "https://res.cloudinary.com/ovirred3/image/upload/Checklists_PWA/Assets/Universal/botiquin.jpg"
+};
