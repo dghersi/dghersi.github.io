@@ -84,17 +84,30 @@ function renderModalIlustracion() {
 }
 
 // Renderiza Viñetas de Buenas Prácticas (6 Viñetas)
+// Renderiza el carrusel/galería de viñetas de buenas prácticas (6 Viñetas)
 function renderModalBuenasPracticas() {
   const container = document.getElementById("modal-buenas-practicas-body");
   if (!container) return;
 
   const viñetas = minicargadorData.assets?.buenasPracticas || [];
 
-  container.innerHTML = viñetas.map((url, index) => `
-    <div style="margin-bottom: 12px; text-align: center;">
-      <img src="${url}" alt="Buena Práctica ${index + 1}" style="width: 100%; max-width: 400px; height: auto; border-radius: 6px; border: 1px solid #ddd;">
+  if (viñetas.length === 0) {
+    container.innerHTML = "<p style='text-align:center;'>No hay viñetas disponibles.</p>";
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; padding: 5px;">
+      ${viñetas.map((url, index) => `
+        <div style="text-align: center; background: #f8f9fa; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <img src="${url}" alt="Buena Práctica ${index + 1}" 
+               style="width: 100%; height: auto; border-radius: 6px; display: block; margin: 0 auto;"
+               onerror="this.onerror=null; this.src='https://via.placeholder.com/400x128?text=Imagen+No+Disponible';">
+          <span style="font-size: 11px; font-weight: bold; color: #555; margin-top: 4px; display: block;">Viñeta ${index + 1}</span>
+        </div>
+      `).join('')}
     </div>
-  `).join('');
+  `;
 }
 
 // ==========================================
