@@ -160,8 +160,11 @@
 
   <!-- SCRIPTING DE COMPONENTES -->
   <script src="SetupJs/Firebase.js"></script>
-  <script src="Data/Universal/universal.js"></script>
-  <script src="Data/Minicargador/minicargador.js"></script>
+  <!-- universal.js y minicargador.js ya NO se cargan aquí como script clásico:
+       son módulos ES (usan "export") y se importan directamente en app.js
+       con `import ... from './Data/...'`. Cargarlos también aquí generaba
+       un SyntaxError ("Unexpected token 'export'") porque un <script> sin
+       type="module" no admite la sintaxis export/import. -->
   <script src="Core/loto-engine.js"></script>
   <script src="Core/Plugins.js"></script>
   <script src="Core/pdf-generator.js"></script>
