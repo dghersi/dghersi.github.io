@@ -6,6 +6,30 @@ let currentBloqueIndex = 0;
 let userAnswers = {};
 let selectedFrecuencia = "DIARIO";
 
+// ==========================================
+// EXPOSICIÓN GLOBAL DE MODALES (WINDOW SCOPE)
+// ==========================================
+
+window.openModal = function(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.add("active");
+  } else {
+    console.warn(`No se encontró el modal con ID: ${id}`);
+  }
+};
+
+window.closeModal = function(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.remove("active");
+  }
+};
+
+// ==========================================
+// INICIALIZACIÓN AL CARGAR EL DOM
+// ==========================================
+
 document.addEventListener("DOMContentLoaded", () => {
   // 1. Registro del Service Worker
   if ('serviceWorker' in navigator) {
@@ -37,12 +61,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // 5. Cargar Bloque Inicial de la Matriz
   renderCurrentBloque();
 
-  // 6. Asignar Eventos a Modales con Renderizado Dinámico
+  // 6. Asignar Eventos a los Botones de Modales
   const btnIlustracion = document.getElementById("btn-open-ilustracion");
   if (btnIlustracion) {
     btnIlustracion.onclick = () => {
       renderModalIlustracion();
-      openModal("modal-ilustracion");
+      window.openModal("modal-ilustracion");
     };
   }
 
@@ -50,14 +74,14 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnBuenasPracticas) {
     btnBuenasPracticas.onclick = () => {
       renderModalBuenasPracticas();
-      openModal("modal-buenas-practicas");
+      window.openModal("modal-buenas-practicas");
     };
   }
 
   const btnHallazgos = document.getElementById("btn-open-hallazgos");
   if (btnHallazgos) {
     btnHallazgos.onclick = () => {
-      openModal("modal-hallazgos");
+      window.openModal("modal-hallazgos");
     };
   }
 
@@ -78,7 +102,6 @@ function renderModalIlustracion() {
   const container = document.getElementById("modal-ilustracion-content");
   if (!container) return;
 
-  // Extraer assets comprobando compatibilidad de propiedades
   const assets = minicargadorData.assets || minicargadorData || {};
   const anatomia = assets.anatomiaUrl || assets.anatomia || "";
   const zonificacion = assets.zonificacionUrl || assets.zonificacion || "";
@@ -88,7 +111,7 @@ function renderModalIlustracion() {
       <h4 style="font-size: 14px; color: #1B2631; font-weight: bold; margin-bottom: 8px;">ANATOMÍA DEL EQUIPO</h4>
       <img src="${anatomia}" alt="Anatomía del Equipo" 
            style="width: 100%; max-width: 454px; height: auto; border-radius: 6px; border: 1px solid #ddd; display: block; margin: 0 auto;"
-           onerror="this.onerror=null; this.src='https://via.placeholder.com/454x256?text=Cargando+Anatomia...';">
+           onerror="this.onerror=null; this.src='https://via.placeholder.com/454x256?text=Imagen+No+Disponible';">
     </div>
     
     <hr style="border: 0; border-top: 1px solid #e0e0e0; margin: 15px 0;">
@@ -97,7 +120,7 @@ function renderModalIlustracion() {
       <h4 style="font-size: 14px; color: #1B2631; font-weight: bold; margin-bottom: 8px;">ZONAS DE SEGURIDAD</h4>
       <img src="${zonificacion}" alt="Zonificación de Seguridad" 
            style="width: 100%; max-width: 600px; height: auto; border-radius: 6px; border: 1px solid #ddd; display: block; margin: 0 auto;"
-           onerror="this.onerror=null; this.src='https://via.placeholder.com/600x256?text=Cargando+Zonificacion...';">
+           onerror="this.onerror=null; this.src='https://via.placeholder.com/600x256?text=Imagen+No+Disponible';">
     </div>
   `;
 }
@@ -155,7 +178,7 @@ function renderCurrentBloque() {
     const key = item.n;
     const currentVal = userAnswers[key] ? userAnswers[key].val : '';
 
-    // Vista previa de equipos de emergencia (Extintor / Botiquín)
+    // Vista previa para equipos de emergencia
     let imgPreviewHtml = '';
     const descLower = item.t.toLowerCase();
     if (descLower.includes('extintor')) {
@@ -193,7 +216,7 @@ function renderCurrentBloque() {
     </div>`;
 }
 
-// Funciones globales expuestas a window
+// Funciones globales expuestas a window para respuestas touch
 window.setAnswer = function(key, val, crit, risk, action) {
   userAnswers[key] = { key: key, val: val, crit: crit, r: risk, a: action };
   updateHallazgosUI();
@@ -226,16 +249,6 @@ function updateHallazgosUI() {
   }
 }
 
-function openModal(id) {
-  const modal = document.getElementById(id);
-  if (modal) modal.classList.add("active");
-}
-
-window.closeModal = function(id) {
-  const modal = document.getElementById(id);
-  if (modal) modal.classList.remove("active");
-};
-
 function handleExportPDF() {
   const payload = collectPayload();
   if (window.exportPDFReport) window.exportPDFReport(payload);
@@ -258,15 +271,15 @@ function collectPayload() {
   const lotoEval = window.evaluateLoto ? window.evaluateLoto(userAnswers) : { isLoto: false };
 
   return {
-    tipoMaquinaria: document.getElementById("select-maquinaria").value || "Minicargador",
+    tipoMaquinaria: document.getElementById("select-maquinaria")?.value || "Minicargador",
     frecuencia: selectedFrecuencia,
-    operador: document.getElementById("inp-operador").value || "S/N",
-    licencia: document.getElementById("inp-licencia").value || "S/N",
-    frente: document.getElementById("inp-frente").value || "S/N",
-    horometro: document.getElementById("inp-horometro").value || "0",
-    codigoEquipo: document.getElementById("inp-codigo").value || "MIN-001",
-    marcaModelo: document.getElementById("inp-marca").value || "S/N",
-    reporteActoCondicion: document.getElementById("inp-acto-condicion").value || "",
+    operador: document.getElementById("inp-operador")?.value || "S/N",
+    licencia: document.getElementById("inp-licencia")?.value || "S/N",
+    frente: document.getElementById("inp-frente")?.value || "S/N",
+    horometro: document.getElementById("inp-horometro")?.value || "0",
+    codigoEquipo: document.getElementById("inp-codigo")?.value || "MIN-001",
+    marcaModelo: document.getElementById("inp-marca")?.value || "S/N",
+    reporteActoCondicion: document.getElementById("inp-acto-condicion")?.value || "",
     fechaHora: new Date().toISOString(),
     gps: document.getElementById("gps-coords") ? document.getElementById("gps-coords").innerText : "",
     respuestas: userAnswers,
