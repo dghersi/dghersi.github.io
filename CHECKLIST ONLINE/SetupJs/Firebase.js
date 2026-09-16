@@ -19,3 +19,6 @@ try {
 } catch (e) {
   console.warn("Modo offline local activo");
 }
+
+// Exposición global para que app.js pueda usarla (window.db)
+window.db = db;

@@ -1,5 +1,5 @@
 // Matriz de 27 Ítems Técnicos del Minicargador
-const minicargadorData = [
+const minicargadorBloques = [
   {
     bloque: "Entorno, EPP y condiciones previas",
     items: [
@@ -80,6 +80,7 @@ const CLOUD_BASE = "https://res.cloudinary.com/ovirred3/image/upload/Checklists_
 export const minicargadorData = {
   id: "minicargador",
   nombre: "Minicargador Frontal",
+  bloques: minicargadorBloques,
   assets: {
     anatomiaUrl: `${CLOUD_BASE}/anatomia.png`,
     zonificacionUrl: `${CLOUD_BASE}/zonificacion.png`,
