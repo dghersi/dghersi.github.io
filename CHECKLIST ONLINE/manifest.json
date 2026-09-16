@@ -1,0 +1,21 @@
+{
+  "short_name": "ChecklistPWA",
+  "name": "Checklist Pre-operacional Industrial PWA",
+  "icons": [
+    {
+      "src": "Logos/logo-default.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "Logos/logo-default.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#1B2631",
+  "theme_color": "#1B2631",
+  "display": "standalone",
+  "orientation": "portrait"
+}
