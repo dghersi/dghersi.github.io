@@ -3,124 +3,183 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Checklist Pre-Operacional | Flota Maquinaria</title>
-  
-  <!-- Estilos desde la carpeta dedicada -->
+  <title>PWA Checklist Pre-Operacional</title>
   <link rel="stylesheet" href="Estilos/Estilos.css">
-  <meta name="theme-color" content="#1B2631">
-  
-  <!-- SDKs de Firebase (Compatibilidad CDN) -->
+  <link rel="manifest" href="manifest.json">
+  <!-- Carga Compatibilidad Firebase & jsPDF -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  
-  <!-- Motor jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
-  <!-- Header Fijo PWA -->
-  <header class="app-header">
-    <div class="brand">
-      <span class="icon">🚜</span>
-      <div>
-        <h1>SISTEMA DE INSPECCIÓN</h1>
-        <small>Clase 1: Movimiento de Tierras</small>
-      </div>
-    </div>
-    <div id="net-status" class="status-badge online">📡 ONLINE</div>
-  </header>
-
-  <!-- Barra de Progreso Dinámica -->
-  <div class="progress-container">
-    <div id="progress-bar" class="progress-bar"></div>
-    <span id="progress-text" class="progress-text">Progreso: 0/27 (0%)</span>
-  </div>
-
-  <main class="app-content">
-
-    <!-- Card Metadatos -->
-    <section class="card meta-card">
-      <h2>📋 Datos de Inspección</h2>
-      
-      <div class="form-group">
-        <label>Tipo de Maquinaria</label>
-        <select id="input-tipo-equipo">
-          <option value="Minicargador">Minicargador (SSL / CTL)</option>
-          <option value="Excavadora">Excavadora Hidráulica</option>
-          <option value="Cargador Frontal">Cargador Frontal</option>
+  <!-- ENCABEZADO / MEMBRETE EMULADO EXCEL -->
+  <div class="membrete-container">
+    <div class="membrete-grid">
+      <img src="Logos/logo-default.png" alt="Logo" class="membrete-logo" id="app-logo" onerror="this.src='https://via.placeholder.com/80x50?text=LOGO'">
+      <div class="membrete-title">
+        <h2>CHECKLIST PRE-OPERACIONAL</h2>
+        <select id="select-maquinaria" class="select-maquinaria">
+          <!-- Carga Dinámica según Data activa -->
         </select>
       </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Código Equipo</label>
-          <input type="text" id="input-codigo-equipo" placeholder="Ej: MIN-001">
-        </div>
-        <div class="form-group">
-          <label>Horómetro</label>
-          <input type="number" id="input-horometro" placeholder="1250.5">
-        </div>
+      <div class="membrete-doc-info">
+        <b>Código:</b> S/N<br>
+        <b>Fecha:</b> <span id="timestamp">--/--/----</span><br>
+        <b>Versión:</b> 1<br>
+        <b>Elaborado:</b> DGM
       </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Proyecto / Obra</label>
-          <input type="text" id="input-proyecto" placeholder="Ej: Obra Vía Central">
-        </div>
-        <div class="form-group">
-          <label>Turno</label>
-          <select id="input-turno">
-            <option value="Día">Día</option>
-            <option value="Noche">Noche</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Nombre del Operador</label>
-        <input type="text" id="input-operador" placeholder="Nombre y Apellido">
-      </div>
-    </section>
-
-    <!-- Banner LOTO -->
-    <div id="loto-banner" class="loto-banner hidden">
-      ⚠️ ALERTA LOTO: EQUIPO FUERA DE SERVICIO (NO APTO PARA OPERAR)
     </div>
 
-    <!-- Contenedor Dinámico del Checklist -->
-    <section id="checklist-cards-container"></section>
-
-    <!-- Card Evidencia Fotográfica (LOTO) -->
-    <section id="photo-section" class="card photo-card hidden">
-      <h2>📷 Evidencia Fotográfica Obligatoria (LOTO)</h2>
-      <p>Se ha detectado un hallazgo crítico. Tome la foto de la falla:</p>
-      <input type="file" id="camera-input" accept="image/*" capture="environment">
-    </section>
-
-    <!-- Card Firma Digital & GPS -->
-    <section class="card signature-card">
-      <h2>✍️ Firma Digital de Conformidad</h2>
-      <canvas id="sig-canvas" width="300" height="120"></canvas>
-      <button type="button" id="clear-sig-btn" class="btn btn-secondary">Borrar Firma</button>
-      
-      <div class="gps-info">
-        <span>📍 GPS: <strong id="gps-coords">Obteniendo...</strong></span>
-        <span>🕒 Fecha/Hora: <strong id="timestamp">--/--/---- --:--</strong></span>
-      </div>
-    </section>
-
-    <!-- Botón de Envío -->
-    <div class="action-bar">
-      <button type="button" id="submit-btn" class="btn btn-primary btn-block">
-        SINCRONIZAR A FIREBASE Y GENERAR REPORTE PDF 📲
-      </button>
+    <!-- SWITCHES EXCLUSIVOS DE FRECUENCIA -->
+    <div class="frecuencia-container" id="frecuencia-switches">
+      <button class="switch-btn active" data-frec="DIARIO">DIARIO</button>
+      <button class="switch-btn" data-frec="INTERDIARIO">INTERDIARIO</button>
+      <button class="switch-btn" data-frec="SEMANAL">SEMANAL</button>
+      <button class="switch-btn" data-frec="QUINCENAL">QUINCENAL</button>
+      <button class="switch-btn" data-frec="MENSUAL">MENSUAL</button>
     </div>
 
-  </main>
+    <!-- CAMPOS EXTENDIDOS OPERADOR Y EQUIPO -->
+    <div class="form-grid">
+      <div class="input-group">
+        <label>Operador:</label>
+        <input type="text" id="inp-operador" placeholder="Nombre completo">
+      </div>
+      <div class="input-group">
+        <label>N° Licencia/Certif:</label>
+        <input type="text" id="inp-licencia" placeholder="Categoría / N°">
+      </div>
+      <div class="input-group">
+        <label>Frente de Trabajo / Obra:</label>
+        <input type="text" id="inp-frente" placeholder="Ej: Obra Central">
+      </div>
+      <div class="input-group">
+        <label>Horómetro Actual:</label>
+        <input type="number" step="0.1" id="inp-horometro" placeholder="0000.0">
+      </div>
+      <div class="input-group">
+        <label>Código de Equipo:</label>
+        <input type="text" id="inp-codigo" placeholder="Ej: MIN-001">
+      </div>
+      <div class="input-group">
+        <label>Marca / Modelo:</label>
+        <input type="text" id="inp-marca" placeholder="Ej: Bobcat S650">
+      </div>
+    </div>
+  </div>
 
-  <!-- Módulos vinculados respetando tu estructura exacta -->
+  <!-- BANDEROLA DE BLOQUEO DIGITAL POR CÓDIGO (LOTO ACTIVADO) -->
+  <div id="loto-block-banner" class="bloque-card hidden" style="background: #FDEDEC; border: 2px solid #E74C3C; text-align: center;">
+    <h3 style="color: #E74C3C;">⚠️ EQUIPO BLOQUEADO POR MANTENIMIENTO / SST</h3>
+    <p style="font-size: 11px; margin-top: 5px;">Este equipo tiene un reporte de INOPERATIVO activo. No se puede generar un nuevo checklist hasta su liberación.</p>
+  </div>
+
+  <!-- CARROUSEL / CONTENEDOR MÓVIL DE BLOQUES TÉCNICOS -->
+  <div id="checklist-app-container">
+    <!-- Carga dinámica del bloque activo por JavaScript -->
+  </div>
+
+  <!-- REPORTE PREVENTIVO DE ACTO O CONDICIÓN INSEGURA -->
+  <div class="bloque-card">
+    <div class="bloque-header">
+      <span>¿OBSERVASTE UN ACTO O CONDICIÓN INSEGURA?</span>
+    </div>
+    <div style="padding: 8px 0;">
+      <textarea id="inp-acto-condicion" class="reporte-input" placeholder="Describa brevemente cualquier acto o condición insegura detectada durante el turno..."></textarea>
+    </div>
+  </div>
+
+  <!-- SECCIÓN FIRMA DIGITAL CANVAS -->
+  <div class="bloque-card">
+    <div class="bloque-header">
+      <span>✍️ FIRMA DIGITAL DE CONFORMIDAD</span>
+    </div>
+    <div class="canvas-container">
+      <canvas id="sig-canvas" width="400" height="120"></canvas>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+      <button id="clear-sig-btn" class="switch-btn" style="width: auto; padding: 6px 12px;">Borrar Firma</button>
+      <span style="font-size: 10px; color: #7F8C8D;">GPS: <span id="gps-coords">Obteniendo...</span></span>
+    </div>
+  </div>
+
+  <!-- BOTONES DE ACCIÓN FINAL -->
+  <div style="display: flex; gap: 8px; margin-top: 15px;">
+    <button id="btn-save-online" class="action-btn" style="background: #2ECC71;">Guardar y Sincronizar</button>
+    <button id="btn-export-pdf" class="action-btn" style="background: #2980B9;">Descargar PDF</button>
+  </div>
+
+  <!-- BARRA FLOTANTE DE APOYO Y AUDITORÍA -->
+  <div class="sticky-actions">
+    <button id="btn-open-ilustracion" class="action-btn">🖼️ Ilustración</button>
+    <button id="btn-open-buenas-practicas" class="action-btn">💡 Buenas Prácticas</button>
+    <button id="btn-open-hallazgos" class="action-btn" style="background: #E74C3C;">⚠️ Hallazgos (<span id="hallazgos-count">0</span>)</button>
+  </div>
+
+  <!-- MODAL 1: ILUSTRACIÓN (ANATOMÍA Y ZONIFICACIÓN) -->
+  <div id="modal-ilustracion" class="modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal('modal-ilustracion')">✕</button>
+      <h3>Anatomía & Zonificación de Seguridad</h3>
+      <div style="text-align: center; margin-top: 10px;">
+        <p style="font-size: 11px; font-weight: bold;">ANATOMÍA DEL EQUIPO (454x256 px)</p>
+        <img id="img-anatomia" src="Data/Minicargador/anatomia.png" style="width: 100%; border-radius: 4px; margin-bottom: 10px;" onerror="this.src='https://via.placeholder.com/454x256?text=Anatomia+Minicargador'">
+        <p style="font-size: 11px; font-weight: bold;">ZONAS DE SEGURIDAD (600x256 px)</p>
+        <img id="img-zonificacion" src="Data/Minicargador/zonificacion.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/600x256?text=Zonificacion+de+Seguridad'">
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: BUENAS PRÁCTICAS (CUADRÍCULA DE 6 VIÑETAS) -->
+  <div id="modal-buenas-practicas" class="modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal('modal-buenas-practicas')">✕</button>
+      <h3>Buenas Prácticas de Trabajo</h3>
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-top: 10px;">
+        <div>
+          <p style="font-size: 9px; font-weight: bold;">1. INSPECCIÓN 360° (300x128)</p>
+          <img src="Data/Minicargador/bp-1.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/300x128?text=BP+1'">
+        </div>
+        <div>
+          <p style="font-size: 9px; font-weight: bold;">2. BARRA SEGURIDAD (400x128)</p>
+          <img src="Data/Minicargador/bp-2.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/400x128?text=BP+2'">
+        </div>
+        <div>
+          <p style="font-size: 9px; font-weight: bold;">3. PUNTOS CIEGOS (300x128)</p>
+          <img src="Data/Minicargador/bp-3.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/300x128?text=BP+3'">
+        </div>
+        <div>
+          <p style="font-size: 9px; font-weight: bold;">4. CARGA BAJA (300x128)</p>
+          <img src="Data/Minicargador/bp-4.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/300x128?text=BP+4'">
+        </div>
+        <div>
+          <p style="font-size: 9px; font-weight: bold;">5. 3 PUNTOS APOYO (400x128)</p>
+          <img src="Data/Minicargador/bp-5.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/400x128?text=BP+5'">
+        </div>
+        <div>
+          <p style="font-size: 9px; font-weight: bold;">6. ALERTA SONORA (300x128)</p>
+          <img src="Data/Minicargador/bp-6.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/300x128?text=BP+6'">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: VENTANA FLOTANTE DE HALLAZGOS Y ACCIONES DE REMEDIACIÓN -->
+  <div id="modal-hallazgos" class="modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal('modal-hallazgos')">✕</button>
+      <h3 style="color: #E74C3C;">Acciones Correctivas y Hallazgos</h3>
+      <div id="hallazgos-list" style="margin-top: 10px; font-size: 11px;">
+        <p>No se registran fallas hasta el momento.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTING DE COMPONENTES -->
   <script src="SetupJs/Firebase.js"></script>
-  <script src="Data/minicargador.js"></script>
+  <script src="Data/Universal/universal.js"></script>
+  <script src="Data/Minicargador/minicargador.js"></script>
   <script src="Core/loto-engine.js"></script>
   <script src="Core/Plugins.js"></script>
   <script src="Core/pdf-generator.js"></script>

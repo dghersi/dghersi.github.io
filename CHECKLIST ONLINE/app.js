@@ -1,183 +1,175 @@
-// Variable global para almacenar las respuestas del checklist
-const answers = {};
-let isLotoTriggered = false;
-let photoBase64 = "";
+// app.js - Orquestador Principal de la PWA
+let currentBloqueIndex = 0;
+let userAnswers = {};
+let selectedFrecuencia = "DIARIO";
 
-// Carga e inicialización al cargar el DOM
-window.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. Registro del Service Worker
   if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js')
-    .then(() => console.log('Service Worker Registrado con Éxito (Modo PWA Activo)'))
-    .catch((err) => console.warn('Error al registrar Service Worker:', err));
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('PWA Service Worker Activo. Alcance:', reg.scope))
+      .catch(err => console.warn('Error registrando Service Worker:', err));
   }
 
-  // 1. Renderizar tarjetas con la data de Data/minicargador.js
-  if (typeof minicargadorChecklist !== 'undefined') {
-    renderChecklistCards(minicargadorChecklist);
-  } else {
-    console.error("No se encontró la matriz de datos en Data/minicargador.js");
+  // 2. Inicializar Módulos de Plugins (Firma y GPS)
+  if (window.initSignatureModule) window.initSignatureModule();
+  if (window.initGPSModule) window.initGPSModule();
+
+  // 3. Configurar Switches de Frecuencia
+  const frecBtns = document.querySelectorAll("#frecuencia-switches .switch-btn");
+  frecBtns.forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      frecBtns.forEach(b => b.classList.remove("active"));
+      e.target.classList.add("active");
+      selectedFrecuencia = e.target.getAttribute("data-frec");
+    });
+  });
+
+  // 4. Configurar Selector Dinámico de Maquinaria
+  const selectMaq = document.getElementById("select-maquinaria");
+  if (selectMaq) {
+    selectMaq.innerHTML = `<option value="Minicargador">Minicargador (SSL / CTL)</option>`;
   }
 
-  // 2. Inicializar módulos de Core/Plugins.js
-  if (typeof initSignatureModule === 'function') initSignatureModule();
-  if (typeof initGPSModule === 'function') initGPSModule();
+  // 5. Cargar Bloque Inicial de la Matriz
+  renderCurrentBloque();
 
-  // 3. Handlers para cámara y red
-  initPhotoHandler();
-  initNetworkListener();
+  // 6. Asignar Modales
+  document.getElementById("btn-open-ilustracion").onclick = () => openModal("modal-ilustracion");
+  document.getElementById("btn-open-buenas-practicas").onclick = () => openModal("modal-buenas-practicas");
+  document.getElementById("btn-open-hallazgos").onclick = () => openModal("modal-hallazgos");
+
+  // 7. Botones de Exportación y Guardado
+  document.getElementById("btn-export-pdf").onclick = handleExportPDF;
+  document.getElementById("btn-save-online").onclick = handleSaveOnline;
 });
 
-// Renderizador Dinámico de Tarjetas Touch
-function renderChecklistCards(data) {
-  const container = document.getElementById("checklist-cards-container");
+// FUNCIÓN DE RENDERING POR BLOQUE (CARROUSEL MÓVIL)
+function renderCurrentBloque() {
+  const container = document.getElementById("checklist-app-container");
   if (!container) return;
-  container.innerHTML = "";
 
-  data.forEach((item) => {
-    const card = document.createElement("div");
-    card.className = `card item-card crit-${item.c}`;
-    card.innerHTML = `
-      <div class="item-header">
-        <span class="item-num">${item.n} - ${item.b}</span>
-        <span class="item-crit ${item.c}">${item.c === "ALTO" ? "CRÍTICO (ALTO)" : "MEDIO"}</span>
-      </div>
-      <p class="item-desc">${item.t}</p>
-      <div class="touch-options">
-        <button type="button" class="touch-btn" id="btn-${item.n}-SI">CONFORME [✓]</button>
-        <button type="button" class="touch-btn" id="btn-${item.n}-NO">FALLA [X]</button>
-        <button type="button" class="touch-btn" id="btn-${item.n}-NA">N / A</button>
-      </div>
-    `;
-    container.appendChild(card);
-
-    // Binds para interacción táctil
-    document.getElementById(`btn-${item.n}-SI`).onclick = (e) => setAnswer(item.n, "SI", item.c, e.target);
-    document.getElementById(`btn-${item.n}-NO`).onclick = (e) => setAnswer(item.n, "NO", item.c, e.target);
-    document.getElementById(`btn-${item.n}-NA`).onclick = (e) => setAnswer(item.n, "NA", item.c, e.target);
-  });
-}
-
-// Gestor de Respuestas y Evaluación LOTO
-function setAnswer(num, val, crit, btn) {
-  answers[num] = { val, crit };
-
-  // Feedback Visual Touch
-  const parent = btn.parentElement;
-  Array.from(parent.children).forEach(b => b.classList.remove("active-SI", "active-NO", "active-NA"));
-  btn.classList.add(`active-${val}`);
-
-  // Evaluación LOTO mediante Core/loto-engine.js
-  if (typeof evaluateLoto === 'function') {
-    isLotoTriggered = evaluateLoto(answers);
-    
-    const lotoBanner = document.getElementById("loto-banner");
-    const photoSection = document.getElementById("photo-section");
-    
-    if (lotoBanner) lotoBanner.classList.toggle("hidden", !isLotoTriggered);
-    if (photoSection) photoSection.classList.toggle("hidden", !isLotoTriggered);
-  }
-
-  updateProgress();
-}
-
-// Actualización de Barra de Progreso
-function updateProgress() {
-  const count = Object.keys(answers).length;
-  const total = typeof minicargadorChecklist !== 'undefined' ? minicargadorChecklist.length : 27;
-  const pct = Math.round((count / total) * 100);
-
-  const pBar = document.getElementById("progress-bar");
-  const pText = document.getElementById("progress-text");
-
-  if (pBar) pBar.style.width = `${pct}%`;
-  if (pText) pText.innerText = `Progreso: ${count}/${total} (${pct}%)`;
-}
-
-// Conversor de Foto de Evidencia a Base64
-function initPhotoHandler() {
-  const fileInput = document.getElementById("camera-input");
-  if (!fileInput) return;
-
-  fileInput.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        photoBase64 = event.target.result;
-        const preview = document.getElementById("photo-preview");
-        const container = document.getElementById("photo-preview-container");
-        if (preview && container) {
-          preview.src = photoBase64;
-          container.classList.remove("hidden");
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-}
-
-// Detector de Estado de Red
-function initNetworkListener() {
-  window.addEventListener("online", updateNetBadge);
-  window.addEventListener("offline", updateNetBadge);
-}
-
-function updateNetBadge() {
-  const badge = document.getElementById("net-status");
-  if (!badge) return;
-  if (navigator.onLine) {
-    badge.className = "status-badge online";
-    badge.innerText = "📡 ONLINE";
-  } else {
-    badge.className = "status-badge offline";
-    badge.innerText = "🔌 OFFLINE";
-  }
-}
-
-// Evento Principal de Envío / Sincronización
-document.getElementById("submit-btn").onclick = async () => {
-  const totalItems = typeof minicargadorChecklist !== 'undefined' ? minicargadorChecklist.length : 27;
-  if (Object.keys(answers).length < totalItems) {
-    alert(`Has respondido ${Object.keys(answers).length} de ${totalItems} ítems. Por favor completa la inspección antes de enviar.`);
+  const totalBloques = minicargadorData.length;
+  if (currentBloqueIndex >= totalBloques) {
+    container.innerHTML = `
+      <div class="bloque-card" style="text-align:center; padding: 20px;">
+        <h3 style="color:#2ECC71;">✅ INSPECCIÓN DE BLOQUES COMPLETADA</h3>
+        <p style="font-size:12px; margin-top:5px;">Revise los hallazgos y firme el formulario para finalizar.</p>
+      </div>`;
     return;
   }
 
-  const payload = {
-    tipoMaquinaria: document.getElementById("input-tipo-equipo").value,
-    codigoEquipo: document.getElementById("input-codigo-equipo").value || "S/N",
-    proyecto: document.getElementById("input-proyecto").value || "Sin Especificar",
-    horometro: document.getElementById("input-horometro").value || "0",
-    turno: document.getElementById("input-turno").value,
-    operador: document.getElementById("input-operador").value || "Operador Anónimo",
-    estadoOperativo: isLotoTriggered ? "NO APTO PARA OPERAR (BLOQUEO LOTO)" : "APTO PARA OPERAR",
-    respuestas: answers,
-    fotoEvidenciaBase64: isLotoTriggered ? photoBase64 : "",
-    gps: document.getElementById("gps-coords").innerText,
-    fechaHora: new Date().toISOString()
-  };
+  const bloque = minicargadorData[currentBloqueIndex];
 
-  // Intentar sincronizar a Firestore (SetupJs/Firebase.js)
-  if (typeof db !== 'undefined' && db !== null) {
-    try {
-      await db.collection("inspecciones").add(payload);
-      alert(`✅ Inspección sincronizada en Firestore con éxito.\nEstado: ${payload.estadoOperativo}`);
-    } catch (e) {
-      alert(`⚠️ Sincronización guardada localmente (Offline).\nEstado: ${payload.estadoOperativo}`);
-      saveLocalStorage(payload);
+  let itemsHtml = bloque.items.map(item => {
+    const key = item.n;
+    const currentVal = userAnswers[key] ? userAnswers[key].val : '';
+
+    return `
+      <div class="item-container">
+        <div class="item-info">
+          <span class="item-num">Ítem ${item.n} (${item.c})</span>
+          <p class="item-desc">${item.t}</p>
+          <p class="item-risk">Riesgo: ${item.r}</p>
+        </div>
+        <div class="touch-options">
+          <button class="touch-btn ${currentVal === 'SI' ? 'active-SI' : ''}" onclick="setAnswer('${key}', 'SI', '${item.c}', '${item.r}', '${item.a}')">CONFORME [✓]</button>
+          <button class="touch-btn ${currentVal === 'NO' ? 'active-NO' : ''}" onclick="setAnswer('${key}', 'NO', '${item.c}', '${item.r}', '${item.a}')">FALLA [X]</button>
+          <button class="touch-btn ${currentVal === 'NA' ? 'active-NA' : ''}" onclick="setAnswer('${key}', 'NA', '${item.c}', '${item.r}', '${item.a}')">N / A</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="bloque-card">
+      <div class="bloque-header">
+        <span>BLOQUE ${currentBloqueIndex + 1} DE ${totalBloques}: ${bloque.bloque}</span>
+      </div>
+      ${itemsHtml}
+      <div style="display:flex; justify-content:space-between; margin-top:12px;">
+        <button class="action-btn" onclick="changeBloque(-1)" ${currentBloqueIndex === 0 ? 'disabled' : ''}>Anterior</button>
+        <button class="action-btn" onclick="changeBloque(1)">Siguiente Bloque ➔</button>
+      </div>
+    </div>`;
+}
+
+function setAnswer(key, val, crit, risk, action) {
+  userAnswers[key] = { key: key, val: val, crit: crit, r: risk, a: action };
+  updateHallazgosUI();
+  renderCurrentBloque();
+}
+
+function changeBloque(dir) {
+  currentBloqueIndex += dir;
+  renderCurrentBloque();
+}
+
+function updateHallazgosUI() {
+  const hallazgosList = document.getElementById("hallazgos-list");
+  const countElem = document.getElementById("hallazgos-count");
+
+  const fails = Object.values(userAnswers).filter(a => a.val === "NO");
+  if (countElem) countElem.innerText = fails.length;
+
+  if (hallazgosList) {
+    if (fails.length === 0) {
+      hallazgosList.innerHTML = "<p>No se registran fallas hasta el momento.</p>";
+    } else {
+      hallazgosList.innerHTML = fails.map(f => `
+        <div style="padding: 6px; border-bottom: 1px solid #EAECEE;">
+          <b style="color:#E74C3C;">Ítem ${f.key} (${f.crit}):</b> ${f.r}<br>
+          <i>Acción Obligatoria: ${f.a}</i>
+        </div>
+      `).join('');
     }
-  } else {
-    alert(`📱 Guardado en memoria local del teléfono.\nEstado: ${payload.estadoOperativo}`);
-    saveLocalStorage(payload);
   }
+}
 
-  // Generar PDF mediante Core/pdf-generator.js
-  if (typeof exportPDFReport === 'function') {
-    exportPDFReport(payload);
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) modal.classList.add("active");
+}
+
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) modal.classList.remove("active");
+}
+
+function handleExportPDF() {
+  const payload = collectPayload();
+  if (window.exportPDFReport) window.exportPDFReport(payload);
+}
+
+function handleSaveOnline() {
+  const payload = collectPayload();
+  if (window.db) {
+    window.db.collection("checklists").add(payload)
+      .then(() => alert("✅ Checklist guardado en Firestore con éxito."))
+      .catch((err) => {
+        console.warn("Modo Offline: Guardando en LocalStorage.", err);
+        localStorage.setItem(`chk_${Date.now()}`, JSON.stringify(payload));
+        alert("💾 Sin red. Guardado localmente en el teléfono.");
+      });
   }
-};
+}
 
-function saveLocalStorage(data) {
-  const list = JSON.parse(localStorage.getItem("checklists") || "[]");
-  list.push(data);
-  localStorage.setItem("checklists", JSON.stringify(list));
+function collectPayload() {
+  const lotoEval = window.evaluateLoto ? window.evaluateLoto(userAnswers) : { isLoto: false };
+
+  return {
+    tipoMaquinaria: document.getElementById("select-maquinaria").value || "Minicargador",
+    frecuencia: selectedFrecuencia,
+    operador: document.getElementById("inp-operador").value || "S/N",
+    licencia: document.getElementById("inp-licencia").value || "S/N",
+    frente: document.getElementById("inp-frente").value || "S/N",
+    horometro: document.getElementById("inp-horometro").value || "0",
+    codigoEquipo: document.getElementById("inp-codigo").value || "MIN-001",
+    marcaModelo: document.getElementById("inp-marca").value || "S/N",
+    reporteActoCondicion: document.getElementById("inp-acto-condicion").value || "",
+    fechaHora: new Date().toISOString(),
+    gps: document.getElementById("gps-coords").innerText,
+    respuestas: userAnswers,
+    isLoto: lotoEval.isLoto,
+    estadoOperativo: lotoEval.isLoto ? "EQUIPO NO OPERATIVO (LOTO)" : "EQUIPO APTO"
+  };
 }

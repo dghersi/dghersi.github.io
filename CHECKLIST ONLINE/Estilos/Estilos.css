@@ -1,160 +1,294 @@
+/* Estilos/Estilos.css - Paleta Industrial, Ergonomía Touch & Modales */
 :root {
-  --bg-color: #F4F6F7;
-  --card-bg: #FFFFFF;
   --primary: #1B2631;
   --accent: #2980B9;
-  --success: #2ECC71;
   --danger: #E74C3C;
-  --warning: #F39C12;
-  --text-main: #2C3E50;
-  --border: #D5D8DC;
+  --warning: #F1C40F;
+  --success: #2ECC71;
+  --bg-light: #F4F6F7;
+  --card-bg: #FFFFFF;
+  --border-color: #BDC3C7;
 }
 
-* { 
-  box-sizing: border-box; 
-  margin: 0; 
-  padding: 0; 
-  font-family: system-ui, -apple-system, sans-serif; 
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-body { 
-  background-color: var(--bg-color); 
-  color: var(--text-main); 
-  padding-bottom: 80px; 
+body {
+  background-color: var(--bg-light);
+  color: var(--primary);
+  padding: 10px;
+  max-width: 800px;
+  margin: 0 auto;
+  padding-bottom: 80px; /* Espacio para barra flotante */
 }
 
-.app-header {
-  position: sticky; 
-  top: 0; 
-  z-index: 100;
-  background-color: var(--primary); 
-  color: #FFF;
-  display: flex; 
-  justify-content: space-between; 
+/* 1. MEMBRETE EXCEL & ENCABEZADO */
+.membrete-container {
+  background: var(--card-bg);
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.membrete-grid {
+  display: grid;
+  grid-template-columns: 80px 1fr 110px;
+  gap: 10px;
   align-items: center;
-  padding: 12px 16px; 
-  border-bottom: 3px solid var(--accent);
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
 }
 
-.brand { 
-  display: flex; 
-  align-items: center; 
-  gap: 10px; 
+.membrete-logo {
+  max-width: 100%;
+  max-height: 50px;
+  object-fit: contain;
 }
 
-.brand .icon { font-size: 24px; }
-.brand h1 { font-size: 14px; font-weight: bold; }
-.brand small { font-size: 10px; color: #BDC3C7; }
-
-.status-badge { 
-  font-size: 11px; 
-  font-weight: bold; 
-  padding: 4px 8px; 
-  border-radius: 12px; 
-}
-.status-badge.online { background-color: #1E8449; color: #FFF; }
-.status-badge.offline { background-color: #C0392B; color: #FFF; }
-
-.progress-container { 
-  background-color: #E5E8E8; 
-  height: 22px; 
-  position: relative; 
-}
-.progress-bar { 
-  background-color: var(--accent); 
-  height: 100%; 
-  transition: width 0.3s ease; 
-  width: 0%; 
-}
-.progress-text { 
-  position: absolute; 
-  width: 100%; 
-  text-align: center; 
-  top: 3px; 
-  font-size: 11px; 
-  font-weight: bold; 
-  color: #1B2631; 
+.membrete-title {
+  text-align: center;
 }
 
-.app-content { 
-  padding: 12px; 
-  max-width: 600px; 
-  margin: 0 auto; 
+.membrete-title h2 {
+  font-size: 14px;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 4px;
 }
 
-.card {
-  background: var(--card-bg); 
-  border-radius: 8px; 
-  padding: 14px;
-  margin-bottom: 12px; 
-  border: 1px solid var(--border);
+.select-maquinaria {
+  width: 100%;
+  padding: 5px;
+  font-weight: bold;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+}
+
+.membrete-doc-info {
+  font-size: 10px;
+  line-height: 1.2;
+  border-left: 1px solid var(--border-color);
+  padding-left: 5px;
+}
+
+/* SWITCHES DE FRECUENCIA */
+.frecuencia-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.switch-btn {
+  flex: 1;
+  padding: 6px 2px;
+  font-size: 10px;
+  font-weight: bold;
+  border: 1px solid var(--border-color);
+  background: #EAECEE;
+  cursor: pointer;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.switch-btn.active {
+  background: var(--accent);
+  color: #FFF;
+  border-color: var(--primary);
+}
+
+/* 2. CAMPOS EXTENDIDOS OPERADOR / EQUIPO */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  font-size: 10px;
+  font-weight: bold;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+
+.input-group input {
+  padding: 6px;
+  font-size: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+/* 3. ESTRUCTURA DE BLOQUE / CARRUSEL SWIPE */
+.bloque-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 15px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.card h2 { 
-  font-size: 14px; 
-  color: var(--primary); 
-  margin-bottom: 10px; 
+.bloque-header {
+  background: var(--primary);
+  color: #FFF;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.form-group { margin-bottom: 10px; }
-.form-group label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; }
-.form-group input, .form-group select {
-  width: 100%; 
-  padding: 10px; 
-  font-size: 13px;
-  border: 1px solid var(--border); 
-  border-radius: 6px; 
+.item-container {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #E5E7E9;
+  border-radius: 6px;
   background: #FAFAFA;
 }
 
-.form-row { display: flex; gap: 10px; }
-.form-row .form-group { flex: 1; }
+.item-info {
+  margin-bottom: 8px;
+}
 
-.item-card { border-left: 5px solid var(--accent); margin-bottom: 10px; }
-.item-card.crit-ALTO { border-left-color: var(--danger); background-color: #FDF2E9; }
-
-.item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-.item-num { background: var(--primary); color: #FFF; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
-.item-crit { font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
-.item-crit.ALTO { background: #FADBD8; color: #C0392B; }
-.item-crit.MEDIO { background: #FCF3CF; color: #D35400; }
-
-.item-desc { font-size: 12px; font-weight: 500; color: #2C3E50; margin-bottom: 10px; line-height: 1.3; }
-
-.touch-options { display: flex; gap: 8px; }
-.touch-btn {
-  flex: 1; 
-  padding: 12px 0; 
-  font-size: 12px; 
+.item-num {
   font-weight: bold;
-  border: 1px solid var(--border); 
-  border-radius: 6px; 
-  background: #EAECEE;
-  color: var(--text-main); 
-  text-align: center; 
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.item-desc {
+  font-size: 13px;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.item-risk {
+  font-size: 10px;
+  color: var(--danger);
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+/* BOTONES RESPUESTA TOUCH */
+.touch-options {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.touch-btn {
+  flex: 1;
+  padding: 10px;
+  font-size: 11px;
+  font-weight: bold;
+  border: 1px solid var(--border-color);
+  background: #FFF;
+  border-radius: 6px;
   cursor: pointer;
 }
-.touch-btn.active-SI { background-color: var(--success) !important; color: #FFF !important; }
-.touch-btn.active-NO { background-color: var(--danger) !important; color: #FFF !important; }
-.touch-btn.active-NA { background-color: #7F8C8D !important; color: #FFF !important; }
 
-.loto-banner {
-  background-color: var(--danger); 
-  color: #FFF; 
-  font-weight: bold;
-  font-size: 12px; 
-  text-align: center; 
-  padding: 10px; 
-  border-radius: 6px; 
-  margin-bottom: 12px;
+.touch-btn.active-SI { background: var(--success); color: #FFF; }
+.touch-btn.active-NO { background: var(--danger); color: #FFF; }
+.touch-btn.active-NA { background: #7F8C8D; color: #FFF; }
+
+/* 4. BARRA ACCIÓN FLOTANTE (BOTONES AUXILIARES) */
+.sticky-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #FFF;
+  border-top: 2px solid var(--primary);
+  padding: 8px;
+  display: flex;
+  justify-content: space-around;
+  gap: 8px;
+  z-index: 100;
 }
 
-#sig-canvas { border: 1px dashed var(--border); border-radius: 6px; width: 100%; height: 120px; background: #FAFAFA; }
-.gps-info { font-size: 10px; margin-top: 8px; color: #7F8C8D; display: flex; flex-direction: column; gap: 2px; }
+.action-btn {
+  flex: 1;
+  padding: 8px;
+  font-size: 11px;
+  font-weight: bold;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
 
-.btn { padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-.btn-primary { background-color: #27AE60; color: #FFF; font-size: 14px; }
-.btn-secondary { background-color: #95A5A6; color: #FFF; font-size: 11px; margin-top: 6px; }
-.btn-block { width: 100%; }
+/* 5. MODALES VISUALES */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.active { display: flex; }
+
+.modal-content {
+  background: #FFF;
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.modal-close {
+  background: var(--danger);
+  color: #FFF;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  float: right;
+  cursor: pointer;
+}
+
+/* 6. FIRMA CANVAS & REPORTE PREVENTIVO */
+.canvas-container {
+  border: 2px dashed var(--border-color);
+  background: #FFF;
+  border-radius: 6px;
+  margin-top: 8px;
+  touch-action: none; /* Previene scroll durante la firma */
+}
+
+#sig-canvas {
+  width: 100%;
+  height: 120px;
+  display: block;
+}
+
+textarea.reporte-input {
+  width: 100%;
+  height: 60px;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 12px;
+  resize: none;
+}
+
 .hidden { display: none !important; }
