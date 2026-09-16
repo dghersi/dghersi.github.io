@@ -2,18 +2,25 @@
 // IMPORTANTE: sube este número cada vez que cambies cualquier archivo
 // listado en ASSETS_TO_CACHE. Si no lo subes, los usuarios seguirán
 // viendo la versión vieja cacheada aunque reemplaces los archivos.
-const CACHE_NAME = 'pwa-checklist-v3';
+const CACHE_NAME = 'pwa-checklist-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './app.js',
+  './manifest.json',
   './Estilos/Estilos.css',
   './SetupJs/Firebase.js',
   './Data/Universal/universal.js',
   './Data/Minicargador/minicargador.js',
   './Core/loto-engine.js',
   './Core/Plugins.js',
-  './Core/pdf-generator.js'
+  './Core/pdf-generator.js',
+  // Librerías externas (CDN): deben quedar cacheadas desde la primera
+  // instalación, porque si el primer uso en el teléfono ocurre sin
+  // internet no habrá forma de descargarlas después.
+  'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 ];
 
 self.addEventListener('install', (e) => {
