@@ -118,51 +118,33 @@
   </div>
 
   <!-- MODAL 1: ILUSTRACIÓN (ANATOMÍA Y ZONIFICACIÓN) -->
-  <div id="modal-ilustracion" class="modal">
-    <div class="modal-content">
-      <button class="modal-close" onclick="closeModal('modal-ilustracion')">✕</button>
+  <!-- Modal de Ilustración & Zonificación -->
+  <div id="modal-ilustracion" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
       <h3>Anatomía & Zonificación de Seguridad</h3>
-      <div style="text-align: center; margin-top: 10px;">
-        <p style="font-size: 11px; font-weight: bold;">ANATOMÍA DEL EQUIPO (454x256 px)</p>
-        <img id="img-anatomia" src="Data/Minicargador/anatomia.png" style="width: 100%; border-radius: 4px; margin-bottom: 10px;" onerror="this.src='https://via.placeholder.com/454x256?text=Anatomia+Minicargador'">
-        <p style="font-size: 11px; font-weight: bold;">ZONAS DE SEGURIDAD (600x256 px)</p>
-        <img id="img-zonificacion" src="Data/Minicargador/zonificacion.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/600x256?text=Zonificacion+de+Seguridad'">
-      </div>
+      <button class="close-btn" onclick="closeModal('modal-ilustracion')">&times;</button>
+    </div>
+    <!-- Este es el ID que lee app.js -->
+    <div id="modal-ilustracion-content" class="modal-body">
+      <!-- Las imágenes se inyectan dinámicamente desde app.js -->
     </div>
   </div>
+  </div>
 
-  <!-- MODAL 2: BUENAS PRÁCTICAS (CUADRÍCULA DE 6 VIÑETAS) -->
-  <div id="modal-buenas-practicas" class="modal">
-    <div class="modal-content">
-      <button class="modal-close" onclick="closeModal('modal-buenas-practicas')">✕</button>
-      <h3>Buenas Prácticas de Trabajo</h3>
-      <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-top: 10px;">
-        <div>
-          <p style="font-size: 9px; font-weight: bold;">1. INSPECCIÓN 360° (300x128)</p>
-          <img src="Data/Minicargador/bp-1.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/300x128?text=BP+1'">
-        </div>
-        <div>
-          <p style="font-size: 9px; font-weight: bold;">2. BARRA SEGURIDAD (400x128)</p>
-          <img src="Data/Minicargador/bp-2.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/400x128?text=BP+2'">
-        </div>
-        <div>
-          <p style="font-size: 9px; font-weight: bold;">3. PUNTOS CIEGOS (300x128)</p>
-          <img src="Data/Minicargador/bp-3.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/300x128?text=BP+3'">
-        </div>
-        <div>
-          <p style="font-size: 9px; font-weight: bold;">4. CARGA BAJA (300x128)</p>
-          <img src="Data/Minicargador/bp-4.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/300x128?text=BP+4'">
-        </div>
-        <div>
-          <p style="font-size: 9px; font-weight: bold;">5. 3 PUNTOS APOYO (400x128)</p>
-          <img src="Data/Minicargador/bp-5.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/400x128?text=BP+5'">
-        </div>
-        <div>
-          <p style="font-size: 9px; font-weight: bold;">6. ALERTA SONORA (300x128)</p>
-          <img src="Data/Minicargador/bp-6.png" style="width: 100%; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/300x128?text=BP+6'">
-        </div>
-      </div>
+  <!-- Modal de Buenas Prácticas -->
+  <div id="modal-buenas-practicas" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>💡 Buenas Prácticas de Operación</h3>
+      <button class="close-btn" onclick="closeModal('modal-buenas-practicas')">&times;</button>
     </div>
+    
+    <!-- ID exacto que mapea app.js -->
+    <div id="modal-buenas-practicas-body" class="modal-body">
+      <!-- Las 6 viñetas se renderizan dinámicamente aquí -->
+    </div>
+  </div>
   </div>
 
   <!-- MODAL 3: VENTANA FLOTANTE DE HALLAZGOS Y ACCIONES DE REMEDIACIÓN -->
