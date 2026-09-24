@@ -1,6 +1,8 @@
 # CONOCIMIENTO — DIVISIÓN: MAQUINARIA DE CONSTRUCCIÓN
 
-> Vive en `CHECKLIST ONLINE/Conocimiento/Conocimiento_MaquinariaConstruccion.md`. Archivo acumulativo — se añade contenido nuevo por cada máquina/caso validado de esta División, nunca se reemplaza.
+> Archivo acumulativo de la skill `checklist-maquinaria` para la División **Maquinaria de Construcción**. Vive en `GEN CHECKLIST CLAUDE/Conocimiento/Conocimiento_MaquinariaConstruccion.md` en el repositorio `dghersi/dghersi.github.io`. Se le añade contenido nuevo cada vez que se valida un caso, BloqueSet o máquina adicional de esta División — nunca se reemplaza. Mientras este archivo no exista en GitHub, la skill usa como respaldo la sección 3 de `references/2-Taxonomia_bloques.md`; en cuanto se suba aquí, este archivo pasa a ser la fuente vigente para Maquinaria de Construcción.
+>
+> Las 9 Clases de la División (taxonomía pura) NO viven aquí — están en `TaxonomiaDominios.md`. Este archivo solo contiene lo específico de cada máquina/caso: BloqueSets, ítems, diferencias técnicas.
 
 ## Caso validado: Excavadora / Retroexcavadora (Clase 1 — Movimiento de tierras)
 

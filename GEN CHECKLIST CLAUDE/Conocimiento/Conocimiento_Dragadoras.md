@@ -1,6 +1,6 @@
 # CONOCIMIENTO — DIVISIÓN: DRAGADORAS
 
-> Archivo acumulativo de la skill `checklist-maquinaria` para la División **Dragadoras**. Vive en `CHECKLIST ONLINE/Conocimiento/Conocimiento_Dragadoras.md` en el repositorio `dghersi/dghersi.github.io`. Se le añade contenido nuevo cada vez que se valida un caso, BloqueSet o máquina adicional de esta División — nunca se reemplaza. Mientras este archivo no exista en GitHub, la skill usa como respaldo la sección 5 de `references/2-Taxonomia_bloques.md`; en cuanto se suba aquí, este archivo pasa a ser la fuente vigente para Dragadoras.
+> Archivo acumulativo de la skill `checklist-maquinaria` para la División **Dragadoras**. Vive en `GEN CHECKLIST CLAUDE/Conocimiento/Conocimiento_Dragadoras.md` en el repositorio `dghersi/dghersi.github.io`. Se le añade contenido nuevo cada vez que se valida un caso, BloqueSet o máquina adicional de esta División — nunca se reemplaza. Mientras este archivo no exista en GitHub, la skill usa como respaldo la sección 5 de `references/2-Taxonomia_bloques.md`; en cuanto se suba aquí, este archivo pasa a ser la fuente vigente para Dragadoras.
 >
 > La lista de las 8 Clases de la División (taxonomía pura) NO vive aquí — está en `1-Taxonomia_dominio.md` / `Conocimiento/TaxonomiaDominios.md`. Este archivo solo contiene lo específico de cada máquina/caso dentro de la División: BloqueSets, ítems, mecanismos, hallazgos.
 
@@ -43,7 +43,7 @@ Al revertir el sentido de tiro con el tambor desencrochado: (1) confirmar con el
 
 ## 2. BloqueSet específico validado: Máquina de Balde (10 Bloques)
 
-**Excepción al BloqueSet estándar de 9 Bloques** (ver `2-Taxonomia_bloques.md` sección 1): este caso separa el Sistema Mecánico y el Sistema Eléctrico en dos bloques distintos (Bloque 4 y 5), en vez de combinarlos en un solo "Sistema hidráulico & eléctrico" — justificado porque la máquina no tiene sistema hidráulico, y los hallazgos eléctricos (panel de encendido, mando de apagado del motor) tienen entidad propia y crítica suficiente para no diluirse dentro de lo mecánico. Esto corre el resto de los bloques un puesto respecto al estándar:
+**Excepción al BloqueSet estándar de 9 Bloques** (ver `TaxonomiaBloques.md` sección 1): este caso separa el Sistema Mecánico y el Sistema Eléctrico en dos bloques distintos (Bloque 4 y 5), en vez de combinarlos en un solo "Sistema hidráulico & eléctrico" — justificado porque la máquina no tiene sistema hidráulico, y los hallazgos eléctricos (panel de encendido, mando de apagado del motor) tienen entidad propia y crítica suficiente para no diluirse dentro de lo mecánico. Esto corre el resto de los bloques un puesto respecto al estándar:
 
 1. Entorno, EPP y Ergonomía del Punto de Operación
 2. Visibilidad y Señalización

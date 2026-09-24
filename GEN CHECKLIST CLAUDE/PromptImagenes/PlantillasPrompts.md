@@ -1,6 +1,8 @@
 # CATÁLOGO DE PROMPTS VERIFICADOS — IMÁGENES DEL CHECKLIST
 
-> Vive en `CHECKLIST ONLINE/PromptImagenes/PlantillasPrompts.md`. Cada fila se añade cuando el usuario aprueba una imagen generada con un prompt de `references/3-Prompt_Imagenes.md`. Nunca se borra una fila — si una imagen se regenera con un prompt distinto, se añade una fila nueva, no se reemplaza la anterior.
+> Vive en `GEN CHECKLIST CLAUDE/PromptImagenes/PlantillasPrompts.md`. Cada fila se añade cuando el usuario aprueba una imagen generada con un prompt de `references/3-Prompt_Imagenes.md`. Nunca se borra una fila — si una imagen se regenera con un prompt distinto, se añade una fila nueva, no se reemplaza la anterior.
+>
+> A diferencia de los `Conocimiento_<División>.md`, este catálogo **no tiene contenido de respaldo local** dentro de la skill — mientras no exista en GitHub, simplemente no hay catálogo previo que consultar y cada prompt se genera de cero con las plantillas de `references/3-Prompt_Imagenes.md` (protocolo en su sección 0).
 
 ## Formato de cada entrada
 

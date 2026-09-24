@@ -1,6 +1,13 @@
 # TAXONOMÍA DEL DOMINIO — DIVISIÓN → CLASE → SUBTIPO
 
-> Vive en `CHECKLIST ONLINE/Conocimiento/TaxonomiaDominios.md` en el repositorio `dghersi/dghersi.github.io`. Es la fuente de verdad para la skill `checklist-maquinaria` en cuanto a clasificación de equipos. Solo contiene taxonomía pura (División/Clase/Subtipo) — el detalle técnico específico de cada máquina (BloqueSets, mecanismos, hallazgos, ítems) vive en su propio `Conocimiento_<NombreDivision>.md`, no aquí.
+## 0. Protocolo de fuente de datos (leer primero)
+
+Este archivo tiene una fuente **primaria** y una **de respaldo**:
+
+1. **Primaria — GitHub:** intenta leer `dghersi/dghersi.github.io/GEN CHECKLIST CLAUDE/Conocimiento/TaxonomiaDominios.md`. Si el repositorio y el archivo existen y son accesibles, esa es la taxonomía vigente — úsala en vez del contenido de abajo, y si hay diferencias entre ambos, avísale al usuario en vez de asumir cuál es la correcta.
+2. **Respaldo — este archivo:** si el archivo en GitHub no existe todavía, no es accesible, o la carpeta `Conocimiento/` aún no se ha creado en el repositorio, usa el contenido de las secciones 1 y 2 de aquí abajo como la taxonomía vigente. No lo trates como desactualizado por defecto — solo el archivo de GitHub, si existe, tiene prioridad.
+
+Cuando el usuario apruebe una ampliación de la taxonomía (nueva División/Clase/Subtipo), actualiza primero el archivo en GitHub si ya existe; si todavía no existe, actualiza este archivo y avisa al usuario que esa ampliación sigue pendiente de migrar a GitHub.
 
 ## 1. Estructura de nivel superior
 
@@ -15,7 +22,7 @@ El dominio completo NO es solo "Maquinaria de Construcción": se organiza en un 
 3. **Es un implemento montado como acople sobre un equipo ya clasificado** → NO se clasifica aparte; se convierte en un ítem de verificación dentro del checklist del equipo anfitrión (típicamente Bloque 5, Componentes Esenciales).
    - Ejemplo: Martillo hidráulico montado como acople de una Excavadora → no tiene División propia, es un ítem del checklist de la Excavadora.
 
-Si un equipo nuevo no encaja en ninguna División/Clase de abajo, proponer la ampliación de la taxonomía al usuario antes de continuar y, una vez aprobada, actualizar este archivo — nunca improvisar una clasificación paralela ni dejarla solo en el chat.
+Si un equipo nuevo no encaja en ninguna División/Clase de abajo, **proponer la ampliación de la taxonomía al usuario antes de continuar** y, una vez aprobada, actualizar este archivo — nunca improvisar una clasificación paralela ni dejarla solo en el chat.
 
 ## 2. Las 7 Divisiones
 
@@ -39,7 +46,7 @@ Subtipos: Combustión / Neumáticas / Eléctricas / Con Pólvora / Otras.
 Sin sub-clasificar todavía (ej. cortadora de pavimento, vibroapisonador).
 
 ### 2.4 Equipos Estacionarios
-Pendiente de clasificación exhaustiva (ej. compresora, grupos electrógenos, soldadoras estacionarias). Caso validado: Soldadora por Electrofusión Ritmo Elektra S-V1 — ver BloqueSet específico en `Conocimiento_EquiposEstacionarios.md`.
+Pendiente de clasificación exhaustiva (ej. compresora, grupos electrógenos, soldadoras estacionarias). Caso validado: Soldadora por Electrofusión Ritmo Elektra S-V1 (ver BloqueSet específico en `2-Taxonomia_bloques.md`).
 
 ### 2.5 Herramientas Manuales
 Sin desarrollar.
@@ -47,7 +54,7 @@ Sin desarrollar.
 ### 2.6 Equipos Auxiliares o Emergencia
 Sin desarrollar.
 
-### 2.7 Dragadoras — 8 Clases
+### 2.7 Dragadoras — 8 Clases (reconciliada, confirmado por el usuario 22/09/2026)
 
 - **Clase 1 – De Arrastre**
 - **Clase 2 – De Cuchara o Almeja**
@@ -58,6 +65,6 @@ Sin desarrollar.
 - **Clase 7 – De Succión en Marcha** (Draga de Arrastre por Succión)
 - **Clase 8 – Neumática o de Airlift**
 
-**Caso validado — Máquina de Balde:** División Dragadoras → Clase 1 (De Arrastre) → checklist combinado para 2 Subtipos: Recuperador de Cable y Dragadora/Cargadora de Baldes. Ver detalle técnico completo (mecanismos, roles, BloqueSet específico, ítems) en `Conocimiento_Dragadoras.md`.
+**Caso validado — Máquina de Balde:** División Dragadoras → Clase 1 (De Arrastre) → checklist combinado para 2 Subtipos: Subtipo A (Recuperador de Cable) y Subtipo B (Dragadora/Cargadora de Baldes). En el texto de los ítems, cuando algo no aplica a ambos subtipos, se etiqueta `[Nombre del Subtipo]` — **nunca** códigos internos de equipo (ej. MPI-18, MLT-18).
 
-**Rango de caracteres para el caso Máquina de Balde: 84-94** (excepción confirmada por el usuario al default general de 88-97).
+**Rango de caracteres para este caso: 84-94** (excepción documentada al default de 88-97 de `SKILL.md` sección 3, confirmada explícitamente por el usuario).
