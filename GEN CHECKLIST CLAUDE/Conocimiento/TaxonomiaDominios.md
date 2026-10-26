@@ -14,13 +14,16 @@ Cuando el usuario apruebe una ampliación de la taxonomía (nueva División/Clas
 El dominio completo NO es solo "Maquinaria de Construcción": se organiza en un árbol de 3 niveles, y Maquinaria de Construcción es únicamente una de varias Divisiones.
 
 ### Criterio de clasificación (para decidir División/Clase de un equipo nuevo)
+Se decide por **quién soporta el peso del equipo y si alguien lo guía**:
 
-1. **Se mueve DURANTE la operación** → Herramienta de Poder Portátil (o Equipo Liviano, según tamaño/uso).
-   - Ejemplo: Martillo hidráulico de uso manual → Herramienta de Poder Portátil.
-2. **Permanece estático DURANTE la operación**, aunque sea transportable de un sitio a otro → Equipo Estacionario.
-   - Ejemplo: Soldadora por Electrofusión (Ritmo Elektra S-V1) → siempre estática durante el ciclo de soldadura → Equipo Estacionario, no Herramienta Portátil.
-3. **Es un implemento montado como acople sobre un equipo ya clasificado** → NO se clasifica aparte; se convierte en un ítem de verificación dentro del checklist del equipo anfitrión (típicamente Bloque 5, Componentes Esenciales).
-   - Ejemplo: Martillo hidráulico montado como acople de una Excavadora → no tiene División propia, es un ítem del checklist de la Excavadora.
+1. **El operario sostiene el peso** → Herramienta de Poder Portátil.
+   - Ejemplo: taladro; martillo demoledor de mano; cortadora de concreto manual.
+2. **El suelo o una base propia soporta el peso y el operario solo lo guía u opera** (lo traslada 1 o 2 personas, o va en la tolva de una camioneta sin cama baja) → Equipo Liviano.
+   - Ejemplo: placa compactadora; demoledor o rotomartillo de piso; cortadora de pavimento autopropulsada.
+3. **Funciona fijo y no lo guía nadie**, aunque sea transportable → Equipo Estacionario.
+   - Ejemplo: Soldadora por Electrofusión (Ritmo Elektra S-V1); compresora; motobomba; grupo electrógeno.
+4. **Es un implemento montado como acople sobre un equipo ya clasificado** → NO se clasifica aparte; se convierte en un ítem de verificación dentro del checklist del equipo anfitrión (típicamente Bloque 5, Componentes Esenciales).
+   - Ejemplo: Martillo hidráulico montado como acople de una Excavadora.
 
 Si un equipo nuevo no encaja en ninguna División/Clase de abajo, **proponer la ampliación de la taxonomía al usuario antes de continuar** y, una vez aprobada, actualizar este archivo — nunca improvisar una clasificación paralela ni dejarla solo en el chat.
 
@@ -82,4 +85,4 @@ Sin desarrollar.
 
 **Caso validado — Máquina de Balde:** División Dragadoras → Clase 1 (De Arrastre) → checklist combinado para 2 Subtipos: Subtipo A (Recuperador de Cable) y Subtipo B (Dragadora/Cargadora de Baldes). En el texto de los ítems, cuando algo no aplica a ambos subtipos, se etiqueta `[Nombre del Subtipo]` — **nunca** códigos internos de equipo (ej. MPI-18, MLT-18).
 
-**Rango de caracteres para este caso: 84-94** (excepción documentada al default de 88-97 de `SKILL.md` sección 3, confirmada explícitamente por el usuario).
+**Rango de caracteres para este caso: 84-90** (excepción documentada al default de 88-97 de `SKILL.md` sección 3, confirmada explícitamente por el usuario).
