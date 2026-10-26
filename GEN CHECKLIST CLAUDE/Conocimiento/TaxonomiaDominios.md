@@ -40,10 +40,25 @@ Si un equipo nuevo no encaja en ninguna División/Clase de abajo, **proponer la 
 > La antigua "Clase 7 – Trabajos especializados" fue retirada de Maquinaria de Construcción y sus equipos redistribuidos a otras Divisiones (Herramientas de Poder Portátiles / Equipos Estacionarios / Equipos Livianos), según el criterio de clasificación de la sección 1.
 
 ### 2.2 Herramientas de Poder Portátiles
-Subtipos: Combustión / Neumáticas / Eléctricas / Con Pólvora / Otras.
+*Criterio: el operario sostiene el peso. Clases por función: pendientes.*
+
+- **Combustión**
+- **Neumáticas**
+- **Eléctricas**
+- **Con Pólvora**
+- **Otras** *(por definir)*
+- **Ejemplos ubicados:** taladro; cortadora de concreto manual; martillo demoledor de mano; esmeril angular (radial).
+
 
 ### 2.3 Equipos Livianos
-Sin sub-clasificar todavía (ej. cortadora de pavimento, vibroapisonador).
+*Criterio: el suelo o una base propia soporta el peso y el operario solo lo guía u opera; lo traslada 1 o 2 personas, o va en la tolva de una camioneta.*
+
+- **Clase 1 – Compactación:** placa compactadora; apisonador tipo salto (rana).
+- **Clase 2 – Corte de pavimento y concreto:** cortadora de pavimento autopropulsada (combustión o eléctrica).
+- **Clase 3 – Demolición y rotura:** demoledor o rotomartillo de piso (eléctrico o combustión).
+- **Clase 4 – Mezcla y vibrado de concreto:** mezcladora de concreto (trompo); vibrador de concreto con motor de piso.
+- **Clase 5 – Acabado de superficies:** alisadora o fratasadora de concreto.
+- **Clase 6 – Limpieza y desatoro de redes:** desatoradora con cable; equipo hidrojet liviano.
 
 ### 2.4 Equipos Estacionarios
 Pendiente de clasificación exhaustiva (ej. compresora, grupos electrógenos, soldadoras estacionarias). Caso validado: Soldadora por Electrofusión Ritmo Elektra S-V1 (ver BloqueSet específico en `2-Taxonomia_bloques.md`).
