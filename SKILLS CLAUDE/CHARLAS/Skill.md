@@ -18,6 +18,17 @@ Cada ámbito tiene su propia cadencia semanal — ver "Cadencia semanal, TemasPr
 Desde sept. 2026, gran parte del flujo repetitivo está automatizado (builder reutilizable, rotación automática, tarea programada semanal) — ver `references/motor_automatizacion.md`. La automatización SIEMPRE deja la opción de hacerlo manual: cualquier paso automatizado puede anularse si el usuario da una instrucción explícita distinta (ej. "usa el tema visual Alerta Roja", "esta semana no sigas el orden de TemasProgramados, quiero X").
 
 ## Índice de referencias — dónde buscar cuando algo falla
+ 
+- Fase 1: Pregunta prefabricada vs. construida en obra
+  `references/bifurcacion_temporal.md`
+
+- Fase 3 — Texto, Fase 2: Regla de no admitir incumplimiento, ejemplos mal/bien
+  `references/criterios_paliativo.md`
+
+- Fase 3 — Texto: Voz, tono por sección, excepción Tema Libre
+  `references/estilo_boletin.md`
+Fase 1, Fase 4, Fase 5 
+
 
 | Archivo | Contenido | Se usa en |
 |---|---|---|
